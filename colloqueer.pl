@@ -19,12 +19,10 @@ use XML::LibXSLT;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
 use YAML::Any;
-use Data::Dumper;
 
 open my $config_fh, '<', 'config.yaml';
 
 my $config = Load(join "\n", <$config_fh>);
-print Dumper $config;
 
 my $url_re = q{\b(s?https?|ftp|file|gopher|s?news|telnet|mailbox):} .
              q{(//[-A-Z0-9_.]+:\d*)?} .
@@ -41,7 +39,7 @@ my $irc = POE::Component::IRC->spawn(
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public/ ],
+    main => [ qw/_start irc_001 irc_public irc_join irc_part irc_invite/ ],
   ],
   heap => {
     parser => XML::LibXML->new(),
@@ -86,17 +84,53 @@ sub setup_tab {
           date  => DateTime->now,
           id    => encode_base64($heap->{nick}.time)
         };
-        $widget->set_text('');
         refresh_channel($channel, $heap);
       }
+      $widget->set_text('');
     }
   });
   $frame->add($wv);
   $paned->pack1($frame, TRUE, FALSE);
   $paned->pack2($entry, FALSE, FALSE);
-  $heap->{notebook}->append_page($paned, $channel);
+  $heap->{channels}{$channel}{page} = scalar(keys %{ $heap->{channels} }) - 1;
+  $heap->{notebook}->append_page($paned, make_label($channel, $heap));
   $heap->{channels}{$channel}{view} = $wv;
   $heap->{main_window}->show_all;
+  $heap->{notebook}->set_current_page($heap->{notebook}->page_num($paned));
+}
+
+sub make_label {
+  my ($channel,$heap) = @_;
+  my $notebook = $heap->{notebook};
+  my $hbox = Gtk2::HBox->new;
+  my $label = Gtk2::Label->new($channel);
+  my $button = Gtk2::Button->new();
+  my $image = Gtk2::Image->new_from_stock('gtk-close', 'menu');
+  $button->set_image($image);
+  $button->set_relief('none');
+  $hbox->pack_start ($label, TRUE, TRUE, 0);
+  $hbox->pack_start ($button, FALSE, FALSE, 0);
+  $button->signal_connect(clicked => sub {
+    $heap->{irc}->yield( part => $channel );
+    $notebook->remove_page ($notebook->get_current_page);
+  });
+  $label->show;
+  $button->show;
+  $hbox
+} 
+
+sub irc_invite {
+  my ($heap, $channel) = @_[HEAP, ARG0];
+  $heap->{irc}->yield( join => $channel);
+  setup_tab($heap, $channel);
+}
+
+sub irc_join {
+  my ($heap, $channel) = @_[HEAP, ARG0];
+}
+
+sub irc_part {
+  my ($heap, $channel, $message) = @_[HEAP, ARG1];
 }
 
 sub handle_command {
@@ -104,6 +138,10 @@ sub handle_command {
   if ($command =~ /^join (.+)/) {
     $heap->{irc}->yield( join => $1);
     setup_tab($heap, $1);
+  }
+  elsif ($command =~ /^part (.+)/) {
+    $heap->{irc}->yield( part => $1);
+    $heap->{notebook}->remove_page($heap->{channels}{$1}{page});
   }
 }
 
