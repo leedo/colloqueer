@@ -19,7 +19,6 @@ use XML::LibXSLT;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
 use YAML::Any;
-use JSON::Any;
 
 open my $config_fh, '<', 'config.yaml';
 
