@@ -19,6 +19,7 @@ use XML::LibXSLT;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
 use YAML::Any;
+use JSON::Any;
 
 open my $config_fh, '<', 'config.yaml';
 
@@ -29,12 +30,12 @@ my $url_re = q{\b(s?https?|ftp|file|gopher|s?news|telnet|mailbox):} .
              q{[-A-Z0-9_=?\#:\$\@~\`%&*+|\/.,;\240]+};
 
 my $irc = POE::Component::IRC->spawn( 
-  nick => $config->{nick},
-  port => $config->{server}{port},
-  ircname => $config->{ircname},
-  username => $config->{server}{username},
-  password => $config->{server}{password},
-  server => $config->{server}{host},
+  nick      => $config->{nick},
+  port      => $config->{server}{port},
+  ircname   => $config->{ircname},
+  username  => $config->{server}{username},
+  password  => $config->{server}{password},
+  server    => $config->{server}{host},
 ) or die $!;
 
 POE::Session->create(
@@ -42,12 +43,12 @@ POE::Session->create(
     main => [ qw/_start irc_001 irc_public irc_join irc_part irc_invite/ ],
   ],
   heap => {
-    parser => XML::LibXML->new(),
-    xslt => XML::LibXSLT->new(),
-    irc => $irc,
-    style => $config->{theme},
-    nick => $config->{nick},
-    channels => { map {$_ => {}} @{$config->{channels}} },
+    parser    => XML::LibXML->new(),
+    xslt      => XML::LibXSLT->new(),
+    irc       => $irc,
+    style     => $config->{theme},
+    nick      => $config->{nick},
+    channels  => { map {$_ => {}} @{$config->{channels}} },
   },
 );
 
@@ -69,7 +70,6 @@ sub setup_tab {
   my $frame = Gtk2::Frame->new;
   my $wv = Gtk2::WebKit::WebView->new;
   my $entry = Gtk2::Entry->new;
-  $heap->{channels}{$channel}{msgs} = [];
   $entry->signal_connect("key_press_event", sub {
     my ($widget, $event) = @_;
     if ($event->keyval == $Gtk2::Gdk::Keysyms{Return}) {
@@ -78,26 +78,30 @@ sub setup_tab {
       }
       else {
         $irc->yield(privmsg => $channel => $widget->get_text);
-        push @{$heap->{channels}{$channel}{msgs}}, {
+        my $msg = {
           nick  => $heap->{nick},
+          hostmask => $heap->{nick},
           text  => irc2html($widget->get_text),
           date  => DateTime->now,
           id    => encode_base64($heap->{nick}.time)
         };
-        refresh_channel($channel, $heap);
+        update_channel($channel, $msg, $heap);
       }
       $widget->set_text('');
     }
   });
-  $frame->set_border_width(0);
   $frame->add($wv);
   $paned->pack1($frame, TRUE, FALSE);
   $paned->pack2($entry, FALSE, FALSE);
   $heap->{channels}{$channel}{page} = scalar(keys %{ $heap->{channels} }) - 1;
+  $heap->{channels}{$channel}{lastnick} = '';
   $heap->{notebook}->append_page($paned, make_label($channel, $heap));
   $heap->{channels}{$channel}{view} = $wv;
   $heap->{main_window}->show_all;
   $heap->{notebook}->set_current_page($heap->{notebook}->page_num($paned));
+
+  $heap->{tt}->process('base.html', undef, \(my $html)); 
+  $heap->{channels}{$channel}{view}->load_html_string($html, '/');
 }
 
 sub make_label {
@@ -152,49 +156,40 @@ sub irc_public {
   my $channel = $where->[0];
   return unless exists $heap->{channels}{$channel};
 
-  push @{$heap->{channels}{$channel}{msgs}}, {
+  my $msg = {
     nick  => $from,
+    hostmask => $who,
     text  => irc2html($what),
     date  => DateTime->now,
     id    => encode_base64($from.time)
   };
-  refresh_channel($channel, $heap);
+  update_channel($channel, $msg, $heap);
 }
 
-sub refresh_channel {
-  my ($channel, $heap) = @_;
-  my (@msg_out, @buff);
-  my @msg_in = @{$heap->{channels}{$channel}{msgs}};
-  my $lastnick = $msg_in[0]->{nick};
-  for my $index (0 .. $#msg_in) {
-    my $msg = $msg_in[$index];
-    $msg->{id} =~ s/=*\n//; # strip trailing mime crud
-    if ($msg->{nick} ne $lastnick) {
-      push @msg_out, format_messages($heap, @buff);
-      @buff = ();
-    }
-    push @buff, $msg;
-    $lastnick = $msg->{nick};
-  }
-  push @msg_out, format_messages($heap, @buff);
-  $heap->{tt}->process('base.html', {msgs => \@msg_out}, \(my $html)); 
-  $heap->{channels}{$channel}{view}->load_html_string($html, '/');
+sub update_channel {
+  my ($channel, $msg, $heap) = @_;
+  $msg->{id} =~ s/=*\n//; # strip trailing mime crud
+  my $consecutive = $heap->{channels}{$channel}{lastnick} eq $msg->{nick};
+  my $html = format_message($heap, $msg, $consecutive);
+  $html =~ s/'/\\'/g;
+  $html =~ s/\n//g;
+  $heap->{channels}{$channel}{lastnick} = $msg->{nick};
+  $heap->{channels}{$channel}{view}->execute_script("document.title='$html';");
 }
 
-sub format_messages {
-  my ($heap, @msgs) = @_;
-  my $from = $msgs[0]->{nick};
+sub format_message {
+  my ($heap, $msg, $consecutive) = @_;
   $heap->{tt}->process('message.xml', {
-    user  => $from,
-    msgs  => \@msgs,
-    self  => $from eq $heap->{nick} ? 1 : 0,
+    msg   => $msg,
+    consecutive => $consecutive,
+    self  => $msg->{nick} eq $heap->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
   my $doc = $heap->{parser}->parse_string($message,{encoding => 'utf8'});
   my $results = $heap->{style_doc}->transform($doc,
     XML::LibXSLT::xpath_to_string(
-      consecutiveMessage => 'no',
-      fromEnvelope => 'yes',
-      bulkTransform => "yes",
+      consecutiveMessage => $consecutive ? 'yes' : 'no',
+      fromEnvelope => $consecutive ? 'no' : 'yes',
+      bulkTransform => $consecutive ? 'no' : 'yes',
   ));
   $message = $heap->{style_doc}->output_string($results);
   $message =~ s/<span[^\/>]*\/>//gi; # strip empty spans
@@ -229,9 +224,6 @@ sub _start {
   $heap->{style_doc} = $heap->{xslt}->parse_stylesheet(
     $heap->{parser}->parse_file($heap->{theme_dir}."/main.xsl"));
 
-  $heap->{tt}->process('base.html',undef,\(my $html))
-    or die $heap->{tt}->error;
-
   $heap->{main_window} = Gtk2::Window->new('toplevel');
   $heap->{main_window}->set_default_size(650,500);
   $heap->{main_window}->set_border_width(0);
@@ -239,7 +231,6 @@ sub _start {
   $heap->{notebook} = Gtk2::Notebook->new;
   $heap->{notebook}->set_show_tabs(TRUE);
   $heap->{notebook}->set_tab_pos('bottom');
-  $heap->{notebook}->set_border_width(0);
   $heap->{main_window}->add($heap->{notebook});
   $heap->{main_window}->show_all;
 

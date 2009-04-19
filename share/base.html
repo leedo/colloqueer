@@ -47,11 +47,27 @@
   </script>
 </head>
 <body>
-  <div id="content"><div style="padding:4px 0 5px 0">[% FOR msg IN msgs %][% msg %][% END %]</div></div>
+  <div id="content"><div style="padding:4px 0 5px 0"></div></div>
   [% INCLUDE genericTemplate.html %]
   <script type="text/javascript">
     scrollToBottom();
-    setTimeout(scrollToBottom, 50);
+    function monitorTitle () {
+      if (document.title != '') {
+        var container = document.getElementById('content').childNodes[0];
+        if (document.title.match(/^<span class="sep"/)) {
+          var msg = container.getElementsByClassName('message');
+          if (msg[0]) {
+            msg[0].parentNode.innerHTML += document.title;
+          }
+        }
+        else {
+          container.innerHTML += document.title;
+        }
+        document.title = '';
+        scrollToBottom();
+      }
+    }
+    setInterval(monitorTitle, 500);
   </script>
 </body>
 </html>
