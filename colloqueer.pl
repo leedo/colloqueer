@@ -45,7 +45,7 @@ POE::Session->create(
     parser => XML::LibXML->new(),
     xslt => XML::LibXSLT->new(),
     irc => $irc,
-    style => 'Buttesfire',
+    style => $config->{theme},
     nick => $config->{nick},
     channels => { map {$_ => {}} @{$config->{channels}} },
   },
@@ -89,6 +89,7 @@ sub setup_tab {
       $widget->set_text('');
     }
   });
+  $frame->set_border_width(0);
   $frame->add($wv);
   $paned->pack1($frame, TRUE, FALSE);
   $paned->pack2($entry, FALSE, FALSE);
@@ -232,16 +233,16 @@ sub _start {
     or die $heap->{tt}->error;
 
   $heap->{main_window} = Gtk2::Window->new('toplevel');
-  $heap->{main_window}->set_default_size(500,400);
+  $heap->{main_window}->set_default_size(650,500);
   $heap->{main_window}->set_border_width(0);
   $kernel->signal_ui_destroy( $heap->{main_window} );
   $heap->{notebook} = Gtk2::Notebook->new;
   $heap->{notebook}->set_show_tabs(TRUE);
   $heap->{notebook}->set_tab_pos('bottom');
+  $heap->{notebook}->set_border_width(0);
   $heap->{main_window}->add($heap->{notebook});
   $heap->{main_window}->show_all;
 
-  my $irc = $heap->{irc};
-  $irc->yield( register => 'all' );
-  $irc->yield( connect => { } );
+  $heap->{irc}->yield( register => 'all' );
+  $heap->{irc}->yield( connect => { } );
 }

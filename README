@@ -10,6 +10,8 @@ REQUIRED PERL MODULES
 
 Gtk2            Gtk2::WebKit
 XML::LibXML     XML::LibXSLT
-POE             POE::Kernel::Glib
+POE             POE::Loop::Glib
 YAML::Any       MIME::Base64
 Template        DateTime
+
+Needs ruby until I port irc2html.rb
