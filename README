@@ -13,5 +13,6 @@ XML::LibXML     XML::LibXSLT
 POE             POE::Loop::Glib
 YAML::Any       MIME::Base64
 Template        DateTime
+Moose
 
 Needs ruby until I port irc2html.rb

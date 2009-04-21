@@ -50,24 +50,27 @@
   <div id="content"><div style="padding:4px 0 5px 0"></div></div>
   [% INCLUDE genericTemplate.html %]
   <script type="text/javascript">
+    document.title = '__empty__';
     scrollToBottom();
     function monitorTitle () {
-      if (document.title != '') {
+      if (document.title != '__empty__') {
+        var html = document.title;
+        document.title = '__empty__';
         var container = document.getElementById('content').childNodes[0];
-        if (document.title.match(/^<span class="sep"/)) {
+        if (html.match(/^<span class="sep"/)) {
           var msg = container.getElementsByClassName('message');
-          if (msg[0]) {
-            msg[0].parentNode.innerHTML += document.title;
+          if (msg[msg.length - 1]) {
+            msg[msg.length - 1].parentNode.innerHTML += html;
           }
         }
         else {
-          container.innerHTML += document.title;
+          container.innerHTML += html;
         }
-        document.title = '';
         scrollToBottom();
       }
+      setTimeout(monitorTitle, 100);
     }
-    setInterval(monitorTitle, 500);
+    monitorTitle();
   </script>
 </body>
 </html>
