@@ -24,7 +24,6 @@ my $url_re = q{\b(s?https?|ftp|file|gopher|s?news|telnet|mailbox):} .
 
 has 'html' => (isa => 'Str', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  print STDERR "WHAT";
   my $string = $self->text;
   $string =~ s/\\/\\\\/g;
   my $pid = open2 my $out, my $in, "ruby $FindBin::Bin/irc2html.rb";

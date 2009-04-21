@@ -57,6 +57,12 @@ has 'active' => (
   default => 1,
 );
 
+has 'cleared' => (
+  isa => 'Bool',
+  is => 'rw',
+  default => 0,
+);
+
 sub BUILD {
   my $self = shift;
 
@@ -77,7 +83,11 @@ sub BUILD {
 sub handle_input {
   my ($self, $widget, $event) = @_;
   if ($event->keyval == $Gtk2::Gdk::Keysyms{Return}) {
-    if ($widget->get_text =~ /^\/(.+)/) {
+    if ($widget->get_text =~ /^\/clear/) {
+      $self->webview->load_html_string($self->app->blank_html, '');
+      $self->cleared(1);
+    }
+    elsif ($widget->get_text =~ /^\/(.+)/) {
       $self->app->handle_command($1);
     }
     else {
@@ -143,32 +153,26 @@ sub display_messages {
   my $self = shift;
   return unless $self->active;
   my $title = $self->webview->get_main_frame->get_title || '__empty__';
-  return unless @{ $self->msgs } and $title eq '__empty__';
+  return unless @{ $self->msgs } or @{ $self->events };
 
   my ($consecutive, $lastnick, @msg_out, @buff);
-  $consecutive = 1 if $self->msgs->[0]->nick eq $self->lastnick;
+  my $msg = shift @{ $self->msgs };
+  $consecutive = 1 if $msg->nick eq $self->lastnick and ! $self->cleared;
 
-  while (my $msg = shift @{ $self->msgs }) {
-    if (@buff > 0 and $msg->nick ne $lastnick) {
-      last if $consecutive;
-      push @msg_out, $self->app->format_messages(@buff);
-      @buff = ();
-    }
-    push @buff, $msg;
-    $lastnick = $msg->nick;
-  }
-  $self->lastnick($lastnick);
+  $self->lastnick($msg->nick);
 
-  push @msg_out, $self->app->format_messages($consecutive, @buff);
-  if (@{$self->events}) {
+  push @msg_out, $self->app->format_messages($consecutive, $msg);
+
+  if (! $msg and @{$self->events}) {
     push @msg_out, $self->app->format_event($_) for @{ $self->events };
+    $self->cleared(1);
+    $self->clear_events;
   }
-  $self->clear_events;
+  else {
+    $self->cleared(0);
+  }
 
   my $html = join '', @msg_out;
-  if (@msg_out > 0) {
-    print STDERR "$html\n\n";
-  }
   $self->webview->execute_script("document.title='$html';");
 }
 

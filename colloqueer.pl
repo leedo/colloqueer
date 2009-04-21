@@ -16,7 +16,7 @@ my $app = Colloqueer->new(config => 'config.yaml');
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public irc_join/ ],
+    main => [ qw/_start irc_001 irc_public irc_join irc_part irc_quit/ ],
   ],
   heap => { app => $app },
 );
@@ -54,6 +54,34 @@ sub irc_join {
     nick  => $nick,
     hostmask => $who,
     message => "joined the chat room.",
+    channel => $heap->{app}->channel_by_name($channel),
+  );
+  $heap->{app}->channel_by_name($channel)->add_event($event);
+}
+
+sub irc_part {
+  my ($heap, $who, $channel, $message) = @_[HEAP, ARG0, ARG1, ARG2];
+  my $nick = ( split /!/, $who )[0];
+  return if $nick eq $heap->{app}->nick;
+  return unless $heap->{app}->channel_by_name($channel); 
+  my $event = Colloqueer::Event->new(
+    nick  => $nick,
+    hostmask => $who,
+    message => "left the chat room. ($message)",
+    channel => $heap->{app}->channel_by_name($channel),
+  );
+  $heap->{app}->channel_by_name($channel)->add_event($event);
+}
+
+sub irc_quit {
+  my ($heap, $who, $channel, $message) = @_[HEAP, ARG0, ARG1, ARG2];
+  my $nick = ( split /!/, $who )[0];
+  return if $nick eq $heap->{app}->nick;
+  return unless $heap->{app}->channel_by_name($channel); 
+  my $event = Colloqueer::Event->new(
+    nick  => $nick,
+    hostmask => $who,
+    message => "quit. ($message)",
     channel => $heap->{app}->channel_by_name($channel),
   );
   $heap->{app}->channel_by_name($channel)->add_event($event);
