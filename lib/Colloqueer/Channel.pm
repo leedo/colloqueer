@@ -2,6 +2,7 @@ package Colloqueer::Channel;
 use Moose;
 use Colloqueer;
 use Colloqueer::Message;
+use Colloqueer::Event;
 use Gtk2::Gdk::Keysyms;
 use Gtk2::WebKit;
 use Glib qw/TRUE FALSE/;
@@ -19,6 +20,12 @@ has 'name' => (
 
 has 'msgs' => (
   isa => 'ArrayRef[Colloqueer::Message]',
+  is => 'rw',
+  default => sub { [] }
+);
+
+has 'events' => (
+  isa => 'ArrayRef[Colloqueer::Event]',
   is => 'rw',
   default => sub { [] }
 );
@@ -79,6 +86,7 @@ sub handle_input {
         app     => $self->app,
         channel => $self,
         nick    => $self->app->nick,
+        hostmask => $self->app->nick."!localhost",
         text    => $widget->get_text,
       );
     }
@@ -89,6 +97,16 @@ sub handle_input {
 sub add_message {
   my ($self, $msg) = @_;
   push @{$self->msgs}, $msg;
+}
+
+sub add_event {
+  my ($self, $msg) = @_;
+  push @{$self->events}, $msg;
+}
+
+sub clear_events {
+  my ($self, $msg) = @_;
+  $self->events([]);
 }
 
 sub _build_label {
@@ -130,7 +148,7 @@ sub display_messages {
   my ($consecutive, $lastnick, @msg_out, @buff);
   $consecutive = 1 if $self->msgs->[0]->nick eq $self->lastnick;
 
-  for my $msg (shift @{ $self->msgs }) {
+  while (my $msg = shift @{ $self->msgs }) {
     if (@buff > 0 and $msg->nick ne $lastnick) {
       last if $consecutive;
       push @msg_out, $self->app->format_messages(@buff);
@@ -139,8 +157,14 @@ sub display_messages {
     push @buff, $msg;
     $lastnick = $msg->nick;
   }
-  push @msg_out, $self->app->format_messages($consecutive, @buff);
   $self->lastnick($lastnick);
+
+  push @msg_out, $self->app->format_messages($consecutive, @buff);
+  if (@{$self->events}) {
+    push @msg_out, $self->app->format_event($_) for @{ $self->events };
+  }
+  $self->clear_events;
+
   my $html = join '', @msg_out;
   if (@msg_out > 0) {
     print STDERR "$html\n\n";

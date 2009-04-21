@@ -16,7 +16,7 @@ my $app = Colloqueer->new(config => 'config.yaml');
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public/ ],
+    main => [ qw/_start irc_001 irc_public irc_join/ ],
   ],
   heap => { app => $app },
 );
@@ -33,17 +33,31 @@ sub irc_001 {
 
 sub irc_public {
   my ($heap, $sender, $who, $where, $what) = @_[HEAP, SENDER, ARG0 .. ARG2];
-  my $from = ( split /!/, $who )[0];
+  my $nick = ( split /!/, $who )[0];
   my $channel = $where->[0];
   return unless $heap->{app}->channel_by_name($channel); 
   my $msg = Colloqueer::Message->new(
-    nick    => $from,
+    nick    => $nick,
+    hostmask => $who,
     text    => $what,
     channel => $heap->{app}->channel_by_name($channel),
   );
   $heap->{app}->channel_by_name($channel)->add_message($msg);
 }
 
+sub irc_join {
+  my ($heap, $who, $channel) = @_[HEAP, ARG0, ARG1];
+  my $nick = ( split /!/, $who )[0];
+  return if $nick eq $heap->{app}->nick;
+  return unless $heap->{app}->channel_by_name($channel); 
+  my $event = Colloqueer::Event->new(
+    nick  => $nick,
+    hostmask => $who,
+    message => "joined the chat room.",
+    channel => $heap->{app}->channel_by_name($channel),
+  );
+  $heap->{app}->channel_by_name($channel)->add_event($event);
+}
 
 sub _start {
   my ($kernel, $session, $heap) = @_[KERNEL, SESSION, HEAP];

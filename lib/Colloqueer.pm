@@ -22,7 +22,7 @@ has 'channels' => (
 );
 
 has 'irc' => (
-  isa => 'Any',
+  isa => 'POE::Component::IRC',
   is => 'ro',
   lazy => 1,
   default => sub {
@@ -220,7 +220,25 @@ sub format_messages {
   $message =~ s/'/\\'/g;
   $message =~ s/\n//g;
   return decode_utf8($message);
+}
 
+sub format_event {
+  my ($self, $event) = @_;
+  $self->tt->process('event.xml', {
+    event => $event
+  }, \(my $xml)) or die $!;
+  my $doc = $self->xml->parse_string($xml,{encoding => 'utf8'});
+  my $results = $self->style_xsl->transform($doc,
+    XML::LibXSLT::xpath_to_string(
+      consecutiveMessage => 'no',
+      fromEnvelope => 'yes',
+      bulkTransform => 'yes',
+  ));
+  my $html = $self->style_xsl->output_string($results);
+  $html =~ s/<span[^\/>]*\/>//gi;
+  $html =~ s/'/\\'/g;
+  $html =~ s/\n//g;
+  return decode_utf8($html);
 }
 
 sub display_messages {

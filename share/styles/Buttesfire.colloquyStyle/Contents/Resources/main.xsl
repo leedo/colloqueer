@@ -203,9 +203,11 @@
 			<xsl:when test="$extension = '.tif' or $extension = '.TIF' or $extensionLong = '.tiff' or $extensionLong = '.TIFF'">
 				<a href="{@href}" title="{@href}" class="preview"><img src="{@href}" width="0" alt="Loading Image..." onload="loadInlineImage(this)" /><span><xsl:value-of select="@href" /></span></a>
 			</xsl:when>
+      <!--
 			<xsl:when test="$extension = '.pdf' or $extension = '.PDF'">
 				<a href="{@href}" title="{@href}" class="preview"><img src="{@href}" width="0" alt="Loading Image..." onload="loadInlineImage(this)" /><span><xsl:value-of select="@href" /></span></a>
 			</xsl:when>
+      -->
 			<xsl:when test="$extension = '.bmp' or $extension = '.BMP'">
 				<a href="{@href}" title="{@href}" class="preview"><img src="{@href}" width="0" alt="Loading Image..." onload="loadInlineImage(this)" /><span><xsl:value-of select="@href" /></span></a>
 			</xsl:when>

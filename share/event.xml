@@ -1,0 +1,4 @@
+<event id="[% event.id %]" name="[% event.name %]" occurred="[% event.date %]">
+  <message><span class="member">[% event.nick %]</span> [% event.message %].</message>
+  <who hostmask="[% event.hostmask %]">[% event.nick %]</who>
+</event>
