@@ -45,6 +45,7 @@ has 'window' => (
   is => 'ro',
   default => sub {
     my $window = Gtk2::Window->new('toplevel');
+    $window->set_title('Colloqueer');
     $window->set_default_size(650,500);
     $window->set_border_width(0);
     return $window;

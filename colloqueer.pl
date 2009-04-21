@@ -8,18 +8,15 @@ use lib "$FindBin::Bin/lib";
 use Gtk2 qw/-init/;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
-use YAML::Any;
 use Colloqueer;
 
-open my $config_fh, '<', 'config.yaml';
-
-my $config = Load(join "\n", <$config_fh>);
+$0 = 'colloqueer';
 
 my $app = Colloqueer->new(config => 'config.yaml');
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public irc_chan_sync/ ],
+    main => [ qw/_start irc_001 irc_public/ ],
   ],
   heap => { app => $app },
 );
@@ -34,18 +31,14 @@ sub irc_001 {
   }
 }
 
-sub irc_chan_sync {
-  my ($heap, $name) = @_[HEAP, ARG0];
-}
-
 sub irc_public {
   my ($heap, $sender, $who, $where, $what) = @_[HEAP, SENDER, ARG0 .. ARG2];
   my $from = ( split /!/, $who )[0];
   my $channel = $where->[0];
   return unless $heap->{app}->channel_by_name($channel); 
   my $msg = Colloqueer::Message->new(
-    nick  => $from,
-    text  => $what,
+    nick    => $from,
+    text    => $what,
     channel => $heap->{app}->channel_by_name($channel),
   );
   $heap->{app}->channel_by_name($channel)->add_message($msg);
