@@ -96,18 +96,28 @@ sub _build_label {
   my $notebook = $self->app->notebook;
   my $hbox = Gtk2::HBox->new;
   my $label = Gtk2::Label->new($self->name);
-  my $button = Gtk2::Button->new();
-  my $image = Gtk2::Image->new_from_stock('gtk-close', 'menu');
-  $button->set_image($image);
-  $button->set_relief('none');
+  my $eventbox = Gtk2::EventBox->new();
+  $eventbox->set_size_request('16', '16');
+  my $image = Gtk2::Image->new_from_file(
+    $self->app->share_dir . '/images/roomTab.png');
+  $eventbox->add($image);
   $hbox->pack_start ($label, TRUE, TRUE, 0);
-  $hbox->pack_start ($button, FALSE, FALSE, 0);
-  $button->signal_connect(clicked => sub {
+  $hbox->pack_start ($eventbox, FALSE, FALSE, 0);
+  $eventbox->signal_connect('button-release-event' => sub {
     $self->active(0);
     $self->app->remove_channel($self);
   });
+  $eventbox->signal_connect('enter-notify-event' => sub {
+    $image->set_from_file(
+      $self->app->share_dir . '/images/aquaTabClose.png');
+  });
+  $eventbox->signal_connect('leave-notify-event' => sub {
+    $image->set_from_file(
+      $self->app->share_dir . '/images/roomTab.png');
+  });
   $label->show;
-  $button->show;
+  $image->show;
+  $eventbox->show;
   return $hbox;
 }
 
