@@ -154,25 +154,23 @@ sub display_messages {
   return unless $self->active;
   my $title = $self->webview->get_main_frame->get_title || '__empty__';
   return unless @{ $self->msgs } or @{ $self->events };
+  
+  my $html = '';
 
-  my ($consecutive, $lastnick, @msg_out, @buff);
-  my $msg = shift @{ $self->msgs };
-  $consecutive = 1 if $msg->nick eq $self->lastnick and ! $self->cleared;
-
-  $self->lastnick($msg->nick);
-
-  push @msg_out, $self->app->format_messages($consecutive, $msg);
-
-  if (! $msg and @{$self->events}) {
-    push @msg_out, $self->app->format_event($_) for @{ $self->events };
-    $self->cleared(1);
-    $self->clear_events;
-  }
-  else {
+  if (my $msg = shift @{ $self->msgs }) {
+    my $consecutive = 1 if $msg->nick eq $self->lastnick and ! $self->cleared;
+    $self->lastnick($msg->nick);
+    $html = $self->app->format_messages($consecutive, $msg);
     $self->cleared(0);
   }
+  elsif (@{$self->events}) {
+    my @out;
+    push @out, $self->app->format_event($_) for @{ $self->events };
+    $self->cleared(1);
+    $self->clear_events;
+    $html = join '', @out;
+  }
 
-  my $html = join '', @msg_out;
   $self->webview->execute_script("document.title='$html';");
 }
 
