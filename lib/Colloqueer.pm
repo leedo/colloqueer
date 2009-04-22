@@ -1,7 +1,6 @@
 package Colloqueer;
 use Moose;
 use Colloqueer::Channel;
-use Data::Dumper;
 use Glib;
 use YAML::Any;
 use FindBin;
@@ -128,6 +127,12 @@ has 'blank_html' => (
   }
 );
 
+has 'id_counter' => (
+  isa => 'Int',
+  is => 'rw',
+  default => 0,
+);
+
 sub BUILD {
   my $self = shift;
 
@@ -150,10 +155,16 @@ sub BUILD {
     )
   );
 
-  Glib::Timeout->add(100, sub { $self->display_messages });
   $self->add_channel($_) for @{$config->{channels}};
   $self->window->add($self->notebook);
   $self->window->show_all;
+  Glib::Timeout->add(50, sub { $self->display_messages });
+  $self->notebook->signal_connect('switch-page', sub {
+    my ($notebook, undef, $page) = @_;
+    $self->channels->[$page]->icon->set_from_file(
+      $self->share_dir . '/images/roomTab.png');
+  });
+
 }
 
 sub add_channel {
@@ -243,8 +254,13 @@ sub format_event {
 
 sub display_messages {
   my $self = shift;
-  $_->display_messages for @{ $self->channels };
+  $_->display_message for @{ $self->channels };
   return 1;
+}
+
+sub unique_id {
+  my $self = shift;
+  return 'a' . $self->id_counter($self->id_counter + 1);
 }
 
 1;

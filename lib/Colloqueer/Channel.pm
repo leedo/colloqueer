@@ -40,6 +40,14 @@ has 'webview' => (
   is => 'rw'
 );
 
+has 'pane' => (
+  isa => 'Gtk2::VPaned',
+  is => 'rw',
+  default => sub {
+    return Gtk2::VPaned->new;
+  }
+);
+
 has 'entry' => (
   isa => 'Gtk2::Entry',
   is => 'rw'
@@ -63,10 +71,20 @@ has 'cleared' => (
   default => 0,
 );
 
+has 'icon' => (
+  isa => 'Gtk2::Image',
+  is => 'ro',
+  default => sub {return Gtk2::Image->new}
+);
+
+has 'tabnum' => (
+  isa => 'Int',
+  is => 'rw'
+);
+
 sub BUILD {
   my $self = shift;
 
-  my $paned = Gtk2::VPaned->new;
   my $frame = Gtk2::Frame->new;
   $self->webview(Gtk2::WebKit::WebView->new);
   $self->webview->load_html_string($self->app->blank_html, '');
@@ -74,9 +92,9 @@ sub BUILD {
 
   $self->entry->signal_connect("key_press_event", sub {$self->handle_input(@_)});
   $frame->add($self->webview);
-  $paned->pack1($frame, TRUE, FALSE);
-  $paned->pack2($self->entry, FALSE, FALSE);
-  $self->app->notebook->append_page($paned, $self->_build_label);
+  $self->pane->pack1($frame, TRUE, FALSE);
+  $self->pane->pack2($self->entry, FALSE, FALSE);
+  $self->tabnum($self->app->notebook->append_page($self->pane, $self->_build_label));
   $self->app->window->show_all;
 }
 
@@ -120,40 +138,47 @@ sub clear_events {
 }
 
 sub _build_label {
-  my $self = shift;
+  my ($self, $messages) = @_;
   my $notebook = $self->app->notebook;
   my $hbox = Gtk2::HBox->new;
   my $label = Gtk2::Label->new($self->name);
   my $eventbox = Gtk2::EventBox->new();
   $eventbox->set_size_request('16', '16');
-  my $image = Gtk2::Image->new_from_file(
-    $self->app->share_dir . '/images/roomTab.png');
-  $eventbox->add($image);
-  $hbox->pack_start ($label, TRUE, TRUE, 0);
+  $self->icon->set_from_file(
+    $self->app->share_dir . "/images/roomTab.png");
+  $eventbox->add($self->icon);
   $hbox->pack_start ($eventbox, FALSE, FALSE, 0);
+  $hbox->pack_start ($label, TRUE, TRUE, 0);
   $eventbox->signal_connect('button-release-event' => sub {
     $self->active(0);
     $self->app->remove_channel($self);
   });
   $eventbox->signal_connect('enter-notify-event' => sub {
-    $image->set_from_file(
+    $self->icon->set_from_file(
       $self->app->share_dir . '/images/aquaTabClose.png');
   });
   $eventbox->signal_connect('leave-notify-event' => sub {
-    $image->set_from_file(
+    $self->icon->set_from_file(
       $self->app->share_dir . '/images/roomTab.png');
   });
   $label->show;
-  $image->show;
+  $self->icon->show;
   $eventbox->show;
   return $hbox;
 }
 
-sub display_messages {
+sub focused {
+  my $self = shift;
+  return $self->tabnum == $self->app->notebook->get_current_page;
+}
+
+sub display_message {
   my $self = shift;
   return unless $self->active;
-  my $title = $self->webview->get_main_frame->get_title || '__empty__';
   return unless @{ $self->msgs } or @{ $self->events };
+
+  my $title = $self->webview->get_main_frame->get_title;
+  return unless $title and $title eq '__empty__';
   
   my $html = '';
 
@@ -162,6 +187,10 @@ sub display_messages {
     $self->lastnick($msg->nick);
     $html = $self->app->format_messages($consecutive, $msg);
     $self->cleared(0);
+    if (! $self->focused) {
+      $self->icon->set_from_file(
+        $self->app->share_dir . "/images/roomTabNewMessage.png");
+    }
   }
   elsif (@{$self->events}) {
     my @out;

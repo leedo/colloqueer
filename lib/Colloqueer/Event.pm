@@ -38,9 +38,7 @@ has 'id' => (
   lazy    => 1,
   default => sub {
     my $self = shift;
-    my $id = encode_base64 rand(time) . $self->nick . $self->channel;
-    $id =~ s/[\W\s]//g;
-    return $id;
+    return $self->channel->app->unique_id;
   }
 );
 
