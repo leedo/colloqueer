@@ -34,43 +34,42 @@ sub irc_001 {
 sub irc_public {
   my ($heap, $sender, $who, $where, $what) = @_[HEAP, SENDER, ARG0 .. ARG2];
   my $nick = ( split /!/, $who )[0];
-  my $channel = $where->[0];
-  return unless $heap->{app}->channel_by_name($channel); 
+  return unless my $channel = $heap->{app}->channel_by_name($where->[0]); 
   my $msg = Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
     text    => $what,
-    channel => $heap->{app}->channel_by_name($channel),
+    channel => $channel,
   );
-  $heap->{app}->channel_by_name($channel)->add_message($msg);
+  $channel->add_message($msg);
 }
 
 sub irc_join {
-  my ($heap, $who, $channel) = @_[HEAP, ARG0, ARG1];
+  my ($heap, $who, $to) = @_[HEAP, ARG0, ARG1];
   my $nick = ( split /!/, $who )[0];
   return if $nick eq $heap->{app}->nick;
-  return unless $heap->{app}->channel_by_name($channel); 
+  return unless my $channel = $heap->{app}->channel_by_name($to); 
   my $event = Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "joined the chat room.",
-    channel => $heap->{app}->channel_by_name($channel),
+    channel => $channel,
   );
-  $heap->{app}->channel_by_name($channel)->add_event($event);
+  $channel->add_event($event);
 }
 
 sub irc_part {
-  my ($heap, $who, $channel, $message) = @_[HEAP, ARG0, ARG1, ARG2];
+  my ($heap, $who, $to, $message) = @_[HEAP, ARG0, ARG1, ARG2];
   my $nick = ( split /!/, $who )[0];
   return if $nick eq $heap->{app}->nick;
-  return unless $heap->{app}->channel_by_name($channel); 
+  return unless my $channel = $heap->{app}->channel_by_name($to); 
   my $event = Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "left the chat room. ($message)",
-    channel => $heap->{app}->channel_by_name($channel),
+    channel => $channel,
   );
-  $heap->{app}->channel_by_name($channel)->add_event($event);
+  $channel->add_event($event);
 }
 
 sub irc_quit {

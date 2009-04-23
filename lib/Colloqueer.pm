@@ -133,6 +133,12 @@ has 'id_counter' => (
   default => 0,
 );
 
+has 'browser' => (
+  isa => 'Str',
+  is => 'rw',
+  default => 'x-www-browser',
+);
+
 sub BUILD {
   my $self = shift;
 
@@ -141,6 +147,7 @@ sub BUILD {
 
   %{ $self->{server} } = %{ $config->{server} };
   $self->nick($config->{nick});
+  $self->browser($config->{browser});
   $self->share_dir("$FindBin::Bin/share");
   $self->theme_dir($self->share_dir . '/styles/'
     . $config->{theme} . '.colloquyStyle/Contents/Resources');
@@ -161,6 +168,10 @@ sub BUILD {
   Glib::Timeout->add(50, sub { $self->display_messages });
   $self->notebook->signal_connect('switch-page', sub {
     my ($notebook, undef, $page) = @_;
+    Glib::Timeout->add(50, sub {
+      $self->channels->[$page]->entry->grab_focus;
+      return 0;
+    });
     $self->channels->[$page]->icon->set_from_file(
       $self->share_dir . '/images/roomTab.png');
   });

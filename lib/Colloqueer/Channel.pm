@@ -87,6 +87,26 @@ sub BUILD {
 
   my $frame = Gtk2::Frame->new;
   $self->webview(Gtk2::WebKit::WebView->new);
+  $self->webview->signal_connect('navigation-requested' => sub {
+    my (undef, undef, $req) = @_;
+    my $uri = $req->get_uri;
+    return if $uri =~ /^member:/;
+    my $pid = fork();
+    if ($pid == 0) {
+      exec($self->app->browser, $uri);
+    }
+    return 'ignore';
+  });
+  $self->webview->signal_connect('populate_popup' => sub {
+      my (undef, $menu) = @_;
+      for my $menuitem ($menu->get_children) {
+        my $label = ($menuitem->get_children)[0];
+        next unless $label;
+        if ($label->get_text ne 'Open Link' and $label->get_text ne 'Copy Link Location') {
+          $menu->remove($menuitem);
+        }
+      }
+  });
   $self->webview->load_html_string($self->app->blank_html, '');
   $self->entry(Gtk2::Entry->new);
 
