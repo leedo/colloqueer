@@ -100,14 +100,13 @@ sub irc_quit {
   $message = "quit" unless $message;
   print STDERR "$nick $message\n";
   return if $nick eq $heap->{app}->nick;
-  return unless my $channel = $heap->{app}->channel_by_name($to); 
-  my $event = Colloqueer::Event->new(
-    nick  => $nick,
-    hostmask => $who,
-    message => "quit. ($message)",
-    channel => $channel,
-  );
-  $channel->add_event($event);
+#  my $event = Colloqueer::Event->new(
+#    nick  => $nick,
+#    hostmask => $who,
+#    message => "quit. ($message)",
+#    channel => $channel,
+#  );
+#  $channel->add_event($event);
 }
 
 sub _start {
