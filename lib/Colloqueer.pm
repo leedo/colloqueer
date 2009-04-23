@@ -190,6 +190,9 @@ sub BUILD {
         $self->notebook->prev_page;
         return 1;
       }
+      if ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
+        $self->channels->[$self->notebook->get_current_page]->clear();
+      }
     }
     return 0;
   });

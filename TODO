@@ -1,6 +1,9 @@
 Small:
-- Automatically display new channels/private messages
 - Try other themes, add a theme selector
+- topic
+- quit messages (quit event doesn't include a channel)
+- /names command
+- tab completion
 
 Large:
 - Port irc2html.rb to perl

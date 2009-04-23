@@ -81,6 +81,7 @@ sub irc_join {
 sub irc_part {
   my ($heap, $who, $to, $message) = @_[HEAP, ARG0, ARG1, ARG2];
   my $nick = ( split /!/, $who )[0];
+  $message = "left" unless $message;
   print STDERR "$to $nick $message\n";
   return if $nick eq $heap->{app}->nick;
   return unless my $channel = $heap->{app}->channel_by_name($to); 
@@ -94,9 +95,10 @@ sub irc_part {
 }
 
 sub irc_quit {
-  my ($heap, $who, $to, $message) = @_[HEAP, ARG0, ARG1, ARG2];
+  my ($heap, $who, $message) = @_[HEAP, ARG0, ARG1];
   my $nick = ( split /!/, $who )[0];
-  print STDERR "$to $nick $message\n";
+  $message = "quit" unless $message;
+  print STDERR "$nick $message\n";
   return if $nick eq $heap->{app}->nick;
   return unless my $channel = $heap->{app}->channel_by_name($to); 
   my $event = Colloqueer::Event->new(

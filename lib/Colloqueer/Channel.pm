@@ -142,6 +142,13 @@ sub BUILD {
   $self->app->window->show_all;
 }
 
+sub clear {
+  my $self = shift;
+  $self->webview->load_html_string($self->app->blank_html, '');
+  $self->cleared(1);
+  return $self;
+}
+
 sub handle_input {
   my ($self, $widget, $event) = @_;
   return 0 if $event->state & "shift-mask";
@@ -150,8 +157,7 @@ sub handle_input {
     my $string = $widget->get_buffer->get_text($start, $end, TRUE);
     return 1 unless $string;
     if ($string =~ /^\/clear/) {
-      $self->webview->load_html_string($self->app->blank_html, '');
-      $self->cleared(1);
+      $self->clear;
     }
     elsif ($string =~ /^\/(.+)/) {
       $self->app->handle_command($1);
