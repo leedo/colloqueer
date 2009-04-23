@@ -138,9 +138,11 @@ sub BUILD {
 
 sub handle_input {
   my ($self, $widget, $event) = @_;
+  return 0 if $event->state & "shift-mask";
   if ($event->keyval == $Gtk2::Gdk::Keysyms{Return}) {
     my ($start, $end) = $widget->get_buffer->get_bounds;
     my $string = $widget->get_buffer->get_text($start, $end, TRUE);
+    return 1 unless $string;
     if ($string =~ /^\/clear/) {
       $self->webview->load_html_string($self->app->blank_html, '');
       $self->cleared(1);
