@@ -186,7 +186,6 @@ sub clear_events {
 
 sub _build_label {
   my ($self, $messages) = @_;
-  my $notebook = $self->app->notebook;
   my $hbox = Gtk2::HBox->new;
   my $label = Gtk2::Label->new($self->name);
   my $eventbox = Gtk2::EventBox->new();

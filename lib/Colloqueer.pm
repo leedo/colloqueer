@@ -233,9 +233,9 @@ sub handle_command {
     $self->irc->yield( join => $1);
     $self->add_channel($1);
   }
-  elsif ($command =~ /^part (.+)/) {
-    $self->irc->yield( part => $1);
-    #$heap->notebook->remove_page($heap->channels->{$1}->page);
+  if ($command =~ /^query (\S+)\s?(.*)/) {
+    $self->add_channel($1);
+    $self->irc->yield( privmsg => $1 => $2 );
   }
 }
 

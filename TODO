@@ -1,17 +1,8 @@
 Small:
-- Flexible config file
-- Add more commands (query, part, whois, names)
-- Auto-accept channel invites
-- Get audio working
-- Port irc2html.rb to perl
-- Clean things up
+- Automatically display new channels/private messages
+- Try other themes, add a theme selector
 
 Large:
-- Use javascript to insert new messages, requires:
-  https://bugs.webkit.org/show_bug.cgi?id=16401
-- Remove use of Template, should be able to do it all with
-  libxml2 and javascript
+- Port irc2html.rb to perl
+- Remove use of Template, should be able to do it all with libxml2
 - Multiple servers
-
-Random:
-- Try other themes, add a theme selector

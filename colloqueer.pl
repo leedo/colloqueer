@@ -16,7 +16,7 @@ my $app = Colloqueer->new(config => 'config.yaml');
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public irc_join irc_part irc_quit/ ],
+    main => [ qw/_start irc_001 irc_public irc_msg irc_join irc_part irc_quit/ ],
   ],
   heap => { app => $app },
 );
@@ -32,9 +32,12 @@ sub irc_001 {
 }
 
 sub irc_public {
-  my ($heap, $sender, $who, $where, $what) = @_[HEAP, SENDER, ARG0 .. ARG2];
+  my ($heap, $who, $where, $what) = @_[HEAP, ARG0 .. ARG2];
   my $nick = ( split /!/, $who )[0];
-  return unless my $channel = $heap->{app}->channel_by_name($where->[0]); 
+  my $channel = $heap->{app}->channel_by_name($where->[0]); 
+  if (! $channel) {
+    $channel = $heap->{app}->add_channel($where->[0]);
+  }
   my $msg = Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
@@ -43,6 +46,23 @@ sub irc_public {
   );
   $channel->add_message($msg);
 }
+
+sub irc_msg {
+  my ($heap, $who, $where, $what) = @_[HEAP, ARG0 .. ARG2];
+  my $nick = ( split /!/, $who )[0];
+  my $channel = $heap->{app}->channel_by_name($nick); 
+  if (! $channel) {
+    $channel = $heap->{app}->add_channel($nick);
+  }
+  my $msg = Colloqueer::Message->new(
+    nick    => $nick,
+    hostmask => $who,
+    text    => $what,
+    channel => $channel,
+  );
+  $channel->add_message($msg);
+}
+
 
 sub irc_join {
   my ($heap, $who, $to) = @_[HEAP, ARG0, ARG1];
