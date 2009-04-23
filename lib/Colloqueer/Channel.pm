@@ -19,6 +19,12 @@ has 'name' => (
   required => 1
 );
 
+has 'lastline' => (
+  isa => 'Str',
+  is => 'rw',
+  default => '',
+);
+
 has 'msgs' => (
   isa => 'ArrayRef[Colloqueer::Message]',
   is => 'rw',
@@ -159,8 +165,13 @@ sub handle_input {
         hostmask => $self->app->nick."!localhost",
         text    => $string,
       );
+      $self->lastline($string);
     }
     $widget->get_buffer->delete($start, $end);
+    return 1;
+  }
+  elsif ($event->state & "control-mask" and $event->keyval == $Gtk2::Gdk::Keysyms{Up}) {
+    $widget->get_buffer->set_text($self->lastline);
     return 1;
   }
   else {
