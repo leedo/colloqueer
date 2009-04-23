@@ -82,6 +82,12 @@ has 'tabnum' => (
   is => 'rw'
 );
 
+has 'unread' => (
+  isa => 'Bool',
+  is => 'rw',
+  default => 0
+);
+
 sub BUILD {
   my $self = shift;
 
@@ -102,12 +108,14 @@ sub BUILD {
       for my $menuitem ($menu->get_children) {
         my $label = ($menuitem->get_children)[0];
         next unless $label;
-        if ($label->get_text ne 'Open Link' and $label->get_text ne 'Copy Link Location') {
+        if ($label->get_text ne 'Open Link'
+        and $label->get_text ne 'Copy Link Location'
+        and $label->get_text ne 'Copy Image') {
           $menu->remove($menuitem);
         }
       }
   });
-  $self->webview->load_html_string($self->app->blank_html, '');
+  $self->webview->load_html_string($self->app->blank_html, "file:///".$self->app->theme_dir.'/');
   $self->entry(Gtk2::Entry->new);
 
   $self->entry->signal_connect("key_press_event", sub {$self->handle_input(@_)});
@@ -178,8 +186,9 @@ sub _build_label {
       $self->app->share_dir . '/images/aquaTabClose.png');
   });
   $eventbox->signal_connect('leave-notify-event' => sub {
+    my $icon = $self->unread ? 'roomTabNewMessage' : 'roomTab';
     $self->icon->set_from_file(
-      $self->app->share_dir . '/images/roomTab.png');
+      $self->app->share_dir . "/images/$icon.png");
   });
   $label->show;
   $self->icon->show;
@@ -208,6 +217,7 @@ sub display_message {
     $html = $self->app->format_messages($consecutive, $msg);
     $self->cleared(0);
     if (! $self->focused) {
+      $self->unread(1);
       $self->icon->set_from_file(
         $self->app->share_dir . "/images/roomTabNewMessage.png");
     }

@@ -8,6 +8,7 @@ use Encode;
 use Template;
 use XML::LibXML;
 use XML::LibXSLT;
+use Cwd;
 
 has 'channel_lookup' => (
   isa => 'HashRef',
@@ -148,9 +149,9 @@ sub BUILD {
   %{ $self->{server} } = %{ $config->{server} };
   $self->nick($config->{nick});
   $self->browser($config->{browser});
-  $self->share_dir("$FindBin::Bin/share");
-  $self->theme_dir($self->share_dir . '/styles/'
-    . $config->{theme} . '.colloquyStyle/Contents/Resources');
+  $self->share_dir("$FindBin::Bin/share/");
+  $self->theme_dir($self->share_dir . 'styles/' . $config->{theme}
+    . '.colloquyStyle/Contents/Resources');
 
   $self->tt( Template->new(
       ENCODING => 'utf8',
@@ -168,14 +169,15 @@ sub BUILD {
   Glib::Timeout->add(50, sub { $self->display_messages });
   $self->notebook->signal_connect('switch-page', sub {
     my ($notebook, undef, $page) = @_;
+    my $channel = $self->channels->[$page];
     Glib::Timeout->add(50, sub {
-      $self->channels->[$page]->entry->grab_focus;
+      $channel->entry->grab_focus;
       return 0;
     });
-    $self->channels->[$page]->icon->set_from_file(
+    $channel->unread(0);
+    $channel->icon->set_from_file(
       $self->share_dir . '/images/roomTab.png');
   });
-
 }
 
 sub add_channel {
@@ -191,7 +193,7 @@ sub remove_channel {
   $self->notebook->remove_page($self->notebook->get_current_page);
   for (0 .. $#{ $self->channels }) {
     if ($self->channels->[$_]->name eq $channel->name) {
-      splice @{ $self->channels }, $_, 0;
+      splice @{ $self->channels }, $_, 1;
       last;
     }
   }
