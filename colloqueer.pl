@@ -73,17 +73,17 @@ sub irc_part {
 }
 
 sub irc_quit {
-  my ($heap, $who, $channel, $message) = @_[HEAP, ARG0, ARG1, ARG2];
+  my ($heap, $who, $to, $message) = @_[HEAP, ARG0, ARG1, ARG2];
   my $nick = ( split /!/, $who )[0];
   return if $nick eq $heap->{app}->nick;
-  return unless $heap->{app}->channel_by_name($channel); 
+  return unless my $channel = $heap->{app}->channel_by_name($to); 
   my $event = Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "quit. ($message)",
-    channel => $heap->{app}->channel_by_name($channel),
+    channel => $channel,
   );
-  $heap->{app}->channel_by_name($channel)->add_event($event);
+  $channel->add_event($event);
 }
 
 sub _start {

@@ -5,6 +5,7 @@ use Colloqueer::Message;
 use Colloqueer::Event;
 use Gtk2::Gdk::Keysyms;
 use Gtk2::WebKit;
+use Gtk2::Spell;
 use Glib qw/TRUE FALSE/;
 
 has 'app' => (
@@ -49,8 +50,13 @@ has 'pane' => (
 );
 
 has 'entry' => (
-  isa => 'Gtk2::Entry',
+  isa => 'Gtk2::TextView',
   is => 'rw'
+);
+
+has 'spell' => (
+  isa => 'Gtk2::Spell',
+  is => 'rw',
 );
 
 has 'lastnick' => (
@@ -116,12 +122,16 @@ sub BUILD {
       }
   });
   $self->webview->load_html_string($self->app->blank_html, "file:///".$self->app->theme_dir.'/');
-  $self->entry(Gtk2::Entry->new);
-
+  $self->entry(Gtk2::TextView->new);
+  $self->entry->set_pixels_above_lines(3);
+  $self->entry->set_pixels_below_lines(3);
+  $self->spell(Gtk2::Spell->new_attach($self->entry));
   $self->entry->signal_connect("key_press_event", sub {$self->handle_input(@_)});
   $frame->add($self->webview);
+  my $frame2 = Gtk2::Frame->new;
+  $frame2->add($self->entry);
   $self->pane->pack1($frame, TRUE, FALSE);
-  $self->pane->pack2($self->entry, FALSE, FALSE);
+  $self->pane->pack2($frame2, FALSE, FALSE);
   $self->tabnum($self->app->notebook->append_page($self->pane, $self->_build_label));
   $self->app->window->show_all;
 }
@@ -129,24 +139,31 @@ sub BUILD {
 sub handle_input {
   my ($self, $widget, $event) = @_;
   if ($event->keyval == $Gtk2::Gdk::Keysyms{Return}) {
-    if ($widget->get_text =~ /^\/clear/) {
+    my ($start, $end) = $widget->get_buffer->get_bounds;
+    my $string = $widget->get_buffer->get_text($start, $end, TRUE);
+    if ($string =~ /^\/clear/) {
       $self->webview->load_html_string($self->app->blank_html, '');
       $self->cleared(1);
     }
-    elsif ($widget->get_text =~ /^\/(.+)/) {
+    elsif ($string =~ /^\/(.+)/) {
       $self->app->handle_command($1);
     }
     else {
-      $self->app->irc->yield(privmsg => $self->name => $widget->get_text);
+      $self->app->irc->yield(privmsg => $self->name => $string);
       push @{$self->msgs}, Colloqueer::Message->new(
         app     => $self->app,
         channel => $self,
         nick    => $self->app->nick,
         hostmask => $self->app->nick."!localhost",
-        text    => $widget->get_text,
+        text    => $string,
       );
     }
-    $widget->set_text('');
+    $widget->get_buffer->delete($start, $end);
+    return 1;
+  }
+  else {
+    $self->spell->recheck_all;
+    return 0;
   }
 }
 

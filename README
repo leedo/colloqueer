@@ -11,7 +11,7 @@ REQUIRED PERL MODULES
 Gtk2            Gtk2::WebKit
 XML::LibXML     XML::LibXSLT
 POE             POE::Loop::Glib
-YAML::Any       MIME::Base64
+YAML::Any       Gtk2::Spell
 Template        DateTime
 Moose
 

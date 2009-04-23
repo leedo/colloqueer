@@ -2,6 +2,7 @@ package Colloqueer;
 use Moose;
 use Colloqueer::Channel;
 use Glib;
+use Gtk2::Gdk::Keysyms;
 use YAML::Any;
 use FindBin;
 use Encode;
@@ -177,6 +178,20 @@ sub BUILD {
     $channel->unread(0);
     $channel->icon->set_from_file(
       $self->share_dir . '/images/roomTab.png');
+  });
+  $self->window->signal_connect('key-press-event', sub {
+    my (undef, $event) = @_;
+    if ($event->state & "control-mask") {
+      if ($event->keyval == $Gtk2::Gdk::Keysyms{n}) {
+        $self->notebook->next_page;
+        return 1;
+      }
+      if ($event->keyval == $Gtk2::Gdk::Keysyms{p}) {
+        $self->notebook->prev_page;
+        return 1;
+      }
+    }
+    return 0;
   });
 }
 
