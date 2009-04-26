@@ -11,6 +11,7 @@ Install
 * perl Makefile.PL
 * make
 * make install (probably want to do this as root)
+* copy and edit colloqueer.example.yaml to your home directory as .colloqueer.yaml
 
 Requirements
 ------------
