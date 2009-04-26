@@ -35,6 +35,7 @@ Usage
 * Ctrl+N **Next tab**
 * Ctrl+P **Previous tab**
 * Ctrl+↑ **Previous line**
+
 ###Commands
 * /clear **Clear current channel**
 * /join  [channel] **Join channel**
