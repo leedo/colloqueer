@@ -52,7 +52,7 @@
   <script type="text/javascript">
     document.title = '__empty__';
     scrollToBottom();
-    function monitorTitle () {
+    monitorTitle = function () {
       if (document.title != '__empty__') {
         var html = document.title;
         document.title = '__empty__';
@@ -62,13 +62,15 @@
           if (msg[msg.length - 1]) {
             msg[msg.length - 1].parentNode.innerHTML += html;
           }
+          msg = undefined;
         }
         else {
           container.innerHTML += html;
         }
+        html = undefined;
         scrollToBottom();
       }
-      setTimeout(monitorTitle, 50);
+      setTimeout(monitorTitle, 100);
     }
     monitorTitle();
   </script>

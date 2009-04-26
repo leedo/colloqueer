@@ -136,6 +136,7 @@ sub BUILD {
 
   open my $config_fh, '<', $self->config;
   my $config = Load(join "\n", <$config_fh>);
+  close $config_fh;
 
   %{ $self->{server} } = %{ $config->{server} };
   $self->browser($config->{browser});
@@ -156,7 +157,7 @@ sub BUILD {
 
   $self->window->add($self->notebook);
   $self->window->show_all;
-  Glib::Timeout->add(50, sub { $self->display_messages });
+  Glib::Timeout->add(100, sub { $self->display_messages });
   $self->notebook->signal_connect('switch-page', sub {$self->handle_switch_page(@_)});
   $self->window->signal_connect('key-press-event', sub {$self->handle_window_keypress(@_)});
 }
@@ -168,8 +169,10 @@ sub handle_switch_page {
       $channel->entry->grab_focus;
       return 0;
     });
-  $channel->unread(0);
-  $channel->update_icon($channel->icons->{roomTab});
+  if ($channel->unread) {
+    $channel->unread(0);
+    $channel->update_icon($channel->icons->{roomTab});
+  }
 }
 
 sub handle_window_keypress {
@@ -286,4 +289,5 @@ sub unique_id {
   return 'a' . $self->id_counter($self->id_counter + 1);
 }
 
+__PACKAGE__->meta->make_immutable;
 1;

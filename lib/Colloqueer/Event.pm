@@ -1,7 +1,6 @@
 package Colloqueer::Event;
 use Moose;
 use Colloqueer::Channel;
-use MIME::Base64 qw/encode_base64/;
 
 has 'nick' => (
   isa      => 'Str',
@@ -23,6 +22,7 @@ has 'message' => (
 has 'channel' => (
   isa      => 'Colloqueer::Channel',
   is       => 'ro',
+  weak_ref => 1,
   required => 1
 );
 
@@ -41,5 +41,7 @@ has 'id' => (
     return $self->channel->app->unique_id;
   }
 );
+
+__PACKAGE__->meta->make_immutable;
 
 1;

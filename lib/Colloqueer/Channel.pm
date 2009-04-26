@@ -10,7 +10,8 @@ use Glib qw/TRUE FALSE/;
 
 has 'app' => (
   isa => 'Colloqueer',
-  is  => 'ro'
+  is  => 'ro',
+  weak_ref => 1,
 );
 
 has 'name' => (
@@ -212,8 +213,8 @@ sub handle_input {
       my $msg = Colloqueer::Message->new(
         app     => $self->app,
         channel => $self,
-        nick    => $self->app->server->nick,
-        hostmask => $self->app->server->nick."!localhost",
+        nick    => $self->app->server->{nick},
+        hostmask => $self->app->server->{nick}."!localhost",
         text    => $string,
       );
       push @{$self->msgs}, $msg;
@@ -244,6 +245,7 @@ sub add_event {
 
 sub clear_events {
   my ($self, $msg) = @_;
+  $_ = undef for @{$self->events};
   $self->events([]);
 }
 
@@ -285,6 +287,7 @@ sub display_message {
     my $consecutive = 1 if $msg->nick eq $self->lastnick and ! $self->cleared;
     $self->lastnick($msg->nick);
     $html = $self->app->format_messages($consecutive, $msg);
+    $msg = undef;
     $self->cleared(0);
     if (! $self->focused) {
       $self->unread(1);
@@ -301,5 +304,7 @@ sub display_message {
 
   $self->webview->execute_script("document.title='$html';");
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;
