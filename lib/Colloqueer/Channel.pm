@@ -7,6 +7,7 @@ use Gtk2::Gdk::Keysyms;
 use Gtk2::WebKit;
 use Gtk2::Spell;
 use Glib qw/TRUE FALSE/;
+use List::Util qw/first/;
 
 has 'app' => (
   isa => 'Colloqueer',
@@ -35,11 +36,6 @@ has 'events' => (
   isa => 'ArrayRef[Colloqueer::Event]',
   is => 'rw',
   default => sub { [] }
-);
-
-has 'members' => (
-  isa => 'ArrayRef[Str]',
-  is  => 'rw'
 );
 
 has 'webview' => (
@@ -303,6 +299,15 @@ sub display_message {
   }
 
   $self->webview->execute_script("document.title='$html';");
+}
+
+sub handle_quit {
+  my ($self, $event) = @_;
+  my @nicks = $self->app->irc->channel_list($self->name);
+  print STDERR $self->name, ": ", @nicks, "\n\n";
+  if (grep {$_ eq $event->nick} @nicks) {
+    $self->add_event($event);
+  }
 }
 
 __PACKAGE__->meta->make_immutable;

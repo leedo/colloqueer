@@ -19,8 +19,8 @@ has 'message' => (
   is  => 'ro'
 );
 
-has 'channel' => (
-  isa      => 'Colloqueer::Channel',
+has 'app' => (
+  isa      => 'Colloqueer',
   is       => 'ro',
   weak_ref => 1,
   required => 1
@@ -38,7 +38,7 @@ has 'id' => (
   lazy    => 1,
   default => sub {
     my $self = shift;
-    return $self->channel->app->unique_id;
+    return $self->app->unique_id;
   }
 );
 

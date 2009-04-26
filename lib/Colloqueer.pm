@@ -22,12 +22,12 @@ has 'channels' => (
 );
 
 has 'irc' => (
-  isa => 'POE::Component::IRC',
+  isa => 'POE::Component::IRC::State',
   is => 'ro',
   lazy => 1,
   default => sub {
     my $self = shift;
-    my $irc = POE::Component::IRC->spawn( 
+    my $irc = POE::Component::IRC::State->spawn( 
       nick      => $self->server->{nick},
       ircname   => $self->server->{ircname},
       port      => $self->server->{port},
@@ -153,7 +153,7 @@ sub BUILD {
     $self->xslt->parse_stylesheet(
       $self->xml->parse_file($self->theme_dir . '/main.xsl'));
 
-  $self->add_channel($_) for @{$config->{server}{channels}};
+  #$self->add_channel($_) for @{$config->{server}{channels}};
 
   $self->window->add($self->notebook);
   $self->window->show_all;
@@ -165,6 +165,7 @@ sub BUILD {
 sub handle_switch_page {
   my ($self, $notebook, undef, $page) = @_;
   my $channel = $self->channels->[$page];
+  return unless $channel;
   Glib::Timeout->add(50, sub {
       $channel->entry->grab_focus;
       return 0;
@@ -198,6 +199,7 @@ sub add_channel {
   my $channel = Colloqueer::Channel->new( name => $name, app => $self );
   push @{ $self->channels }, $channel;
   $self->{channel_lookup}{$name} = $channel;
+  $self->irc->yield(names => $name);
 }
 
 sub remove_channel {
@@ -229,7 +231,6 @@ sub handle_command {
   my ($self, $command) = @_;
   if ($command =~ /^join (.+)/) {
     $self->irc->yield( join => $1);
-    $self->add_channel($1);
   }
   if ($command =~ /^query (\S+)\s?(.*)/) {
     $self->add_channel($1);
@@ -289,5 +290,11 @@ sub unique_id {
   return 'a' . $self->id_counter($self->id_counter + 1);
 }
 
+sub handle_quit {
+  my ($self, $event) = @_;
+  $_->handle_quit($event) for @{$self->channels};
+}
+
 __PACKAGE__->meta->make_immutable;
+
 1;

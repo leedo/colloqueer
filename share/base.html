@@ -55,7 +55,6 @@
     monitorTitle = function () {
       if (document.title != '__empty__') {
         var html = document.title;
-        document.title = '__empty__';
         var container = document.getElementById('content').childNodes[0];
         if (html.match(/^<span class="sep"/)) {
           var msg = container.getElementsByClassName('message');
@@ -68,7 +67,9 @@
           container.innerHTML += html;
         }
         html = undefined;
+        container = undefined;
         scrollToBottom();
+        document.title = '__empty__';
       }
       setTimeout(monitorTitle, 100);
     }
