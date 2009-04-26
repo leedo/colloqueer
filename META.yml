@@ -1,0 +1,35 @@
+---
+author: ~
+build_requires:
+  ExtUtils::MakeMaker: 6.11
+distribution_type: module
+generated_by: 'Module::Install version 0.77'
+license: unknown
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: App-Colloqueer
+no_index:
+  directory:
+    - share
+    - share
+    - share
+    - inc
+requires:
+  DateTime: 0
+  Encode: 0
+  File::HomeDir: 0
+  File::ShareDir: 0
+  FindBin: 0
+  Gtk2: 0
+  Gtk2::Spell: 0
+  Gtk2::WebKit: 0
+  IPC::Open2: 0
+  Moose: 0
+  POE: 0
+  POE::Component::IRC: 0
+  POE::Loop::Glib: 0
+  Template: 0
+  XML::LibXML: 0
+  XML::LibXSLT: 0
+  YAML::Any: 0

@@ -8,11 +8,13 @@ use lib "$FindBin::Bin/lib";
 use Gtk2 qw/-init/;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
-use Colloqueer;
+use App::Colloqueer;
+use File::HomeDir;
 
 $0 = 'colloqueer';
 $SIG{CHLD} = "IGNORE";
-my $app = Colloqueer->new(config => 'config.yaml');
+my $config = File::HomeDir->my_home .'/.colloqueer.yaml';
+my $app = App::Colloqueer->new(config => $config);
 
 POE::Session->create(
   package_states => [
@@ -37,7 +39,7 @@ sub irc_public {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($where->[0]);
   }
-  my $msg = Colloqueer::Message->new(
+  my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
     text    => $what,
@@ -53,7 +55,7 @@ sub irc_msg {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($nick);
   }
-  my $msg = Colloqueer::Message->new(
+  my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
     text    => $what,
@@ -72,7 +74,7 @@ sub irc_join {
     return;
   } 
   return unless $channel;
-  my $event = Colloqueer::Event->new(
+  my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "joined the chat room.",
@@ -87,7 +89,7 @@ sub irc_part {
   $message = "left" unless $message;
   return if $nick eq $heap->{app}->server->{nick};
   return unless my $channel = $heap->{app}->channel_by_name($to); 
-  my $event = Colloqueer::Event->new(
+  my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "left the chat room. ($message)",
@@ -101,7 +103,7 @@ sub irc_quit {
   my $nick = ( split /!/, $who )[0];
   $message = "quit" unless $message;
   return if $nick eq $heap->{app}->server->{nick};
-  my $event = Colloqueer::Event->new(
+  my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
     message => "quit. ($message)",

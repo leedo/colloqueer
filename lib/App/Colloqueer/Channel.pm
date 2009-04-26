@@ -1,15 +1,15 @@
-package Colloqueer::Channel;
+package App::Colloqueer::Channel;
 use Moose;
-use Colloqueer;
-use Colloqueer::Message;
-use Colloqueer::Event;
+use App::Colloqueer;
+use App::Colloqueer::Message;
+use App::Colloqueer::Event;
 use Gtk2::Gdk::Keysyms;
 use Gtk2::WebKit;
 use Gtk2::Spell;
 use Glib qw/TRUE FALSE/;
 
 has 'app' => (
-  isa => 'Colloqueer',
+  isa => 'App::Colloqueer',
   is  => 'ro',
   weak_ref => 1,
 );
@@ -21,18 +21,18 @@ has 'name' => (
 );
 
 has 'lastmsg' => (
-  isa     => 'Colloqueer::Message',
+  isa     => 'App::Colloqueer::Message',
   is      => 'rw',
 );
 
 has 'msgs' => (
-  isa => 'ArrayRef[Colloqueer::Message]',
+  isa => 'ArrayRef[App::Colloqueer::Message]',
   is => 'rw',
   default => sub { [] }
 );
 
 has 'events' => (
-  isa => 'ArrayRef[Colloqueer::Event]',
+  isa => 'ArrayRef[App::Colloqueer::Event]',
   is => 'rw',
   default => sub { [] }
 );
@@ -203,7 +203,7 @@ sub handle_input {
     }
     else {
       $self->app->irc->yield(privmsg => $self->name => $string);
-      my $msg = Colloqueer::Message->new(
+      my $msg = App::Colloqueer::Message->new(
         app     => $self->app,
         channel => $self,
         nick    => $self->app->server->{nick},

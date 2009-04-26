@@ -1,13 +1,13 @@
-package Colloqueer::Message;
+package App::Colloqueer::Message;
 use Moose;
-use Colloqueer::Channel;
+use App::Colloqueer::Channel;
 use DateTime;
 use IPC::Open2;
 
 has 'nick' => (isa => 'Str', is => 'ro', required => 1);
 has 'hostmask' => (isa => 'Str', is => 'ro', required => 1);
 has 'consecutive' => (isa => 'Bool', is => 'rw');
-has 'channel' => (isa => 'Colloqueer::Channel', is => 'ro', required => 1, weak_ref => 1);
+has 'channel' => (isa => 'App::Colloqueer::Channel', is => 'ro', required => 1, weak_ref => 1);
 has 'time' => (isa => 'DateTime', is => 'ro', default => sub { DateTime->now });
 has 'text' => (isa => 'Str', is => 'ro', required => 1);
 has 'id' => (isa => 'Str', is => 'ro', lazy => 1, default => sub {

@@ -1,6 +1,6 @@
-package Colloqueer;
+package App::Colloqueer;
 use Moose;
-use Colloqueer::Channel;
+use App::Colloqueer::Channel;
 use Glib;
 use Gtk2::Gdk::Keysyms;
 use YAML::Any;
@@ -9,6 +9,7 @@ use Encode;
 use Template;
 use XML::LibXML;
 use XML::LibXSLT;
+use File::ShareDir qw/dist_dir/;
 
 has 'channel_lookup' => (
   isa => 'HashRef',
@@ -16,7 +17,7 @@ has 'channel_lookup' => (
 );
 
 has 'channels' => (
-  isa => 'ArrayRef[Colloqueer::Channel]',
+  isa => 'ArrayRef[App::Colloqueer::Channel]',
   is  => 'rw',
   default => sub { [] },
 );
@@ -141,8 +142,8 @@ sub BUILD {
   %{ $self->{server} } = %{ $config->{server} };
   $self->browser($config->{browser});
 
-  $self->share_dir("$FindBin::Bin/share/");
-  $self->theme_dir($self->share_dir . 'styles/' . $config->{theme}
+  $self->share_dir( dist_dir('App-Colloqueer'));
+  $self->theme_dir($self->share_dir . '/styles/' . $config->{theme}
     . '.colloquyStyle/Contents/Resources');
 
   $self->{tt} = Template->new(
@@ -196,7 +197,7 @@ sub handle_window_keypress {
 
 sub add_channel {
   my ($self, $name) = @_;
-  my $channel = Colloqueer::Channel->new( name => $name, app => $self );
+  my $channel = App::Colloqueer::Channel->new( name => $name, app => $self );
   push @{ $self->channels }, $channel;
   $self->{channel_lookup}{$name} = $channel;
   $self->irc->yield(names => $name);

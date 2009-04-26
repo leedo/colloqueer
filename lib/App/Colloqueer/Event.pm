@@ -1,6 +1,6 @@
-package Colloqueer::Event;
+package App::Colloqueer::Event;
 use Moose;
-use Colloqueer::Channel;
+use App::Colloqueer::Channel;
 
 has 'nick' => (
   isa      => 'Str',
@@ -20,7 +20,7 @@ has 'message' => (
 );
 
 has 'app' => (
-  isa      => 'Colloqueer',
+  isa      => 'App::Colloqueer',
   is       => 'ro',
   weak_ref => 1,
   required => 1
