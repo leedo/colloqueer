@@ -32,10 +32,10 @@ Colloqueer needs ruby until I port irc2html.rb to perl.
 Usage
 -----
 ###Shortcuts
-Ctrl+N - Next tab
-Ctrl+P - Previous tab
-Ctrl+↑ - Previous line
+* Ctrl+N **Next tab**
+* Ctrl+P **Previous tab**
+* Ctrl+↑ **Previous line**
 ###Commands
-/clear - Clear current channel
-/join  [channel] - Join channel
-/query [nick]    - Message a nick
+/clear **Clear current channel**
+/join  [channel] **Join channel**
+/query [nick] **Message a nick**
