@@ -11,7 +11,6 @@ Install
 * perl Makefile.PL
 * make
 * make install (probably want to do this as root)
-* copy and edit colloqueer.example.yaml to your home directory as .colloqueer.yaml
 
 Requirements
 ------------
@@ -29,3 +28,14 @@ Requirements
 * DateTime
 
 Colloqueer needs ruby until I port irc2html.rb to perl.
+
+Usage
+-----
+###Shortcuts
+Ctrl+N - Next tab
+Ctrl+P - Previous tab
+Ctrl+↑ - Previous line
+###Commands
+/clear - Clear current channel
+/join  [channel] - Join channel
+/query [nick]    - Message a nick
