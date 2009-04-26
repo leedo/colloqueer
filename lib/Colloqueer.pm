@@ -9,7 +9,6 @@ use Encode;
 use Template;
 use XML::LibXML;
 use XML::LibXSLT;
-use Cwd;
 
 has 'channel_lookup' => (
   isa => 'HashRef',
@@ -29,8 +28,8 @@ has 'irc' => (
   default => sub {
     my $self = shift;
     my $irc = POE::Component::IRC->spawn( 
-      nick      => $self->nick,
-      ircname   => $self->ircname,
+      nick      => $self->server->{nick},
+      ircname   => $self->server->{ircname},
       port      => $self->server->{port},
       username  => $self->server->{username},
       password  => $self->server->{password},
@@ -66,12 +65,13 @@ has 'notebook' => (
 
 has 'tt' => (
   isa => 'Template',
-  is  => 'rw',
+  is  => 'ro',
 );
 
 has 'config' => (
   isa      => 'Str',
-  required => 1
+  required => 1,
+  is       => 'ro',
 );
 
 has 'style' => (
@@ -91,17 +91,7 @@ has 'theme_dir' => (
 
 has 'style_xsl' => (
   isa => 'XML::LibXSLT::StylesheetWrapper',
-  is  => 'rw',
-);
-
-has 'nick' => (
-  isa => 'Str',
-  is  => 'rw'
-);
-
-has 'ircname' => (
-  isa => 'Str',
-  is => 'rw',
+  is  => 'ro',
 );
 
 has 'xslt' => (
@@ -144,58 +134,60 @@ has 'browser' => (
 sub BUILD {
   my $self = shift;
 
-  open my $config_fh, '<', $self->{config};
+  open my $config_fh, '<', $self->config;
   my $config = Load(join "\n", <$config_fh>);
 
   %{ $self->{server} } = %{ $config->{server} };
-  $self->nick($config->{nick});
   $self->browser($config->{browser});
+
   $self->share_dir("$FindBin::Bin/share/");
   $self->theme_dir($self->share_dir . 'styles/' . $config->{theme}
     . '.colloquyStyle/Contents/Resources');
 
-  $self->tt( Template->new(
+  $self->{tt} = Template->new(
       ENCODING => 'utf8',
-      INCLUDE_PATH => [ $self->share_dir, $self->theme_dir ],));
+      INCLUDE_PATH => [ $self->share_dir, $self->theme_dir ]);
 
-  $self->style_xsl(
+  $self->{style_xsl} = 
     $self->xslt->parse_stylesheet(
-      $self->xml->parse_file($self->theme_dir . '/main.xsl')
-    )
-  );
+      $self->xml->parse_file($self->theme_dir . '/main.xsl'));
 
-  $self->add_channel($_) for @{$config->{channels}};
+  $self->add_channel($_) for @{$config->{server}{channels}};
+
   $self->window->add($self->notebook);
   $self->window->show_all;
   Glib::Timeout->add(50, sub { $self->display_messages });
-  $self->notebook->signal_connect('switch-page', sub {
-    my ($notebook, undef, $page) = @_;
-    my $channel = $self->channels->[$page];
-    Glib::Timeout->add(50, sub {
+  $self->notebook->signal_connect('switch-page', sub {$self->handle_switch_page(@_)});
+  $self->window->signal_connect('key-press-event', sub {$self->handle_window_keypress(@_)});
+}
+
+sub handle_switch_page {
+  my ($self, $notebook, undef, $page) = @_;
+  my $channel = $self->channels->[$page];
+  Glib::Timeout->add(50, sub {
       $channel->entry->grab_focus;
       return 0;
     });
-    $channel->unread(0);
-    $channel->icon->set_from_file(
-      $self->share_dir . '/images/roomTab.png');
-  });
-  $self->window->signal_connect('key-press-event', sub {
-    my (undef, $event) = @_;
-    if ($event->state & "control-mask") {
-      if ($event->keyval == $Gtk2::Gdk::Keysyms{n}) {
-        $self->notebook->next_page;
-        return 1;
-      }
-      if ($event->keyval == $Gtk2::Gdk::Keysyms{p}) {
-        $self->notebook->prev_page;
-        return 1;
-      }
-      if ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
-        $self->channels->[$self->notebook->get_current_page]->clear();
-      }
+  $channel->unread(0);
+  $channel->update_icon($channel->icons->{roomTab});
+}
+
+sub handle_window_keypress {
+  my ($self, undef, $event) = @_;
+  if ($event->state & "control-mask") {
+    if ($event->keyval == $Gtk2::Gdk::Keysyms{n}) {
+      $self->notebook->next_page;
+      return 1;
     }
-    return 0;
-  });
+    if ($event->keyval == $Gtk2::Gdk::Keysyms{p}) {
+      $self->notebook->prev_page;
+      return 1;
+    }
+    if ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
+      $self->channels->[$self->notebook->get_current_page]->clear();
+    }
+  }
+  return 0;
 }
 
 sub add_channel {
@@ -248,7 +240,7 @@ sub format_messages {
   $self->tt->process('message.xml', {
     from  => $from,
     msgs  => \@msgs,
-    self  => $from eq $self->nick ? 1 : 0,
+    self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
   my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,

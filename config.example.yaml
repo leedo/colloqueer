@@ -1,12 +1,12 @@
 theme: Buttesfire
 browser: x-www-browser
-nick: leedo
-ircname: lee
 server:
+  nick: leedo
+  ircname: lee
   host: irc.zirc.org
   username: leedo
   password: pass
   port: 6669
-channels:
-  - "#channel1"
-  - "#channel2"
+  channels:
+    - "#channel1"
+    - "#channel2"

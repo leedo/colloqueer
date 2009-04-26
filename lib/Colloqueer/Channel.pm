@@ -10,19 +10,18 @@ use Glib qw/TRUE FALSE/;
 
 has 'app' => (
   isa => 'Colloqueer',
-  is => 'ro'
+  is  => 'ro'
 );
 
 has 'name' => (
-  isa => 'Str',
-  is => 'ro',
+  isa      => 'Str',
+  is       => 'ro',
   required => 1
 );
 
-has 'lastline' => (
-  isa => 'Str',
-  is => 'rw',
-  default => '',
+has 'lastmsg' => (
+  isa     => 'Colloqueer::Message',
+  is      => 'rw',
 );
 
 has 'msgs' => (
@@ -39,30 +38,32 @@ has 'events' => (
 
 has 'members' => (
   isa => 'ArrayRef[Str]',
-  is => 'rw'
+  is  => 'rw'
 );
 
 has 'webview' => (
   isa => 'Gtk2::WebKit::WebView',
-  is => 'rw'
+  is  => 'rw',
+  default => sub {Gtk2::WebKit::WebView->new},
 );
 
 has 'pane' => (
   isa => 'Gtk2::VPaned',
   is => 'rw',
-  default => sub {
-    return Gtk2::VPaned->new;
-  }
+  default => sub {Gtk2::VPaned->new},
 );
 
 has 'entry' => (
   isa => 'Gtk2::TextView',
-  is => 'rw'
-);
-
-has 'spell' => (
-  isa => 'Gtk2::Spell',
   is => 'rw',
+  lazy => 1,
+  default => sub {
+    my $tv = Gtk2::TextView->new;
+    my $spell = Gtk2::Spell->new_attach($tv);
+    $tv->set_pixels_above_lines(3);
+    $tv->set_pixels_below_lines(3);
+    return $tv;
+  }
 );
 
 has 'lastnick' => (
@@ -83,63 +84,107 @@ has 'cleared' => (
   default => 0,
 );
 
-has 'icon' => (
-  isa => 'Gtk2::Image',
+has 'icons' => (
+  isa => 'HashRef',
   is => 'ro',
-  default => sub {return Gtk2::Image->new}
+  lazy => 1,
+  default => sub {
+    my $self = shift;
+    {
+      roomTab => Gtk2::Image->new_from_file(
+        $self->app->share_dir . "/images/roomTab.png"),
+      aquaTabClose => Gtk2::Image->new_from_file(
+        $self->app->share_dir . "/images/aquaTabClose.png"),
+      roomTabNewMessage => Gtk2::Image->new_from_file(
+        $self->app->share_dir . "/images/roomTabNewMessage.png")
+    }
+  }
+);
+
+has 'eventbox' => (
+  isa     => 'Gtk2::EventBox',
+  is      => 'ro',
+  default => sub {
+    my $self = shift;
+    my $eventbox = Gtk2::EventBox->new;
+    $eventbox->set_size_request('16', '16');
+    $eventbox->signal_connect('button-release-event',
+      sub {
+        my ($widget,$event,$channel) = @_;
+        $channel->active(0);
+        $channel->app->remove_channel($channel);
+      }, $self);
+    $eventbox->signal_connect('enter-notify-event',
+      sub { 
+        my ($widget,$event,$channel) = @_;
+        $channel->update_icon($channel->icons->{aquaTabClose});
+      }, $self);
+    $eventbox->signal_connect('leave-notify-event',
+      sub {
+        my ($widget,$event,$channel) = @_;
+        my $icon = $channel->unread ? 'roomTabNewMessage' : 'roomTab';
+        $channel->update_icon($channel->icons->{$icon});
+      }, $self);
+    return $eventbox;
+  }
 );
 
 has 'tabnum' => (
   isa => 'Int',
-  is => 'rw'
+  is  => 'rw'
 );
 
 has 'unread' => (
-  isa => 'Bool',
-  is => 'rw',
+  isa     => 'Bool',
+  is      => 'rw',
   default => 0
 );
 
 sub BUILD {
   my $self = shift;
 
-  my $frame = Gtk2::Frame->new;
-  $self->webview(Gtk2::WebKit::WebView->new);
-  $self->webview->signal_connect('navigation-requested' => sub {
-    my (undef, undef, $req) = @_;
-    my $uri = $req->get_uri;
-    return if $uri =~ /^member:/;
-    my $pid = fork();
-    if ($pid == 0) {
-      exec($self->app->browser, $uri);
-    }
-    return 'ignore';
-  });
-  $self->webview->signal_connect('populate_popup' => sub {
-      my (undef, $menu) = @_;
-      for my $menuitem ($menu->get_children) {
-        my $label = ($menuitem->get_children)[0];
-        next unless $label;
-        if ($label->get_text ne 'Open Link'
-        and $label->get_text ne 'Copy Link Location'
-        and $label->get_text ne 'Copy Image') {
-          $menu->remove($menuitem);
-        }
-      }
-  });
-  $self->webview->load_html_string($self->app->blank_html, "file:///".$self->app->theme_dir.'/');
-  $self->entry(Gtk2::TextView->new);
-  $self->entry->set_pixels_above_lines(3);
-  $self->entry->set_pixels_below_lines(3);
-  $self->spell(Gtk2::Spell->new_attach($self->entry));
+  $self->webview->signal_connect('navigation-requested' => sub {$self->handle_link_request(@_)});
+  $self->webview->signal_connect('populate_popup' => sub {$self->handle_menu_request(@_)});
   $self->entry->signal_connect("key_press_event", sub {$self->handle_input(@_)});
+  $self->webview->load_html_string($self->app->blank_html, "file:///".$self->app->theme_dir.'/');
+  $self->update_icon($self->icons->{roomTab});
+
+  my $frame = Gtk2::Frame->new;
   $frame->add($self->webview);
   my $frame2 = Gtk2::Frame->new;
   $frame2->add($self->entry);
+
   $self->pane->pack1($frame, TRUE, FALSE);
   $self->pane->pack2($frame2, FALSE, FALSE);
-  $self->tabnum($self->app->notebook->append_page($self->pane, $self->_build_label));
+  $self->tabnum(
+    $self->app->notebook->append_page($self->pane, $self->_build_label));
   $self->app->window->show_all;
+}
+
+sub handle_link_request {
+  my ($self, undef, undef, $req) = @_;
+  my $uri = $req->get_uri;
+  return if $uri =~ /^member:/;
+  my $pid = fork();
+  if ($pid == 0) {
+    system($self->app->browser, $uri);
+    wait;
+    exit;
+  }
+  return 'ignore';
+}
+
+sub handle_menu_request {
+  my ($self, undef, $menu) = @_;
+  for my $menuitem ($menu->get_children) {
+    my $label = ($menuitem->get_children)[0];
+    next unless $label;
+    if ($label->get_text ne 'Open Link'
+        and $label->get_text ne 'Copy Link Location'
+        and $label->get_text ne 'Copy Image') {
+      $menu->remove($menuitem);
+    }
+  }
 }
 
 sub clear {
@@ -164,24 +209,25 @@ sub handle_input {
     }
     else {
       $self->app->irc->yield(privmsg => $self->name => $string);
-      push @{$self->msgs}, Colloqueer::Message->new(
+      my $msg = Colloqueer::Message->new(
         app     => $self->app,
         channel => $self,
-        nick    => $self->app->nick,
-        hostmask => $self->app->nick."!localhost",
+        nick    => $self->app->server->nick,
+        hostmask => $self->app->server->nick."!localhost",
         text    => $string,
       );
-      $self->lastline($string);
+      push @{$self->msgs}, $msg;
+      $self->lastmsg($msg);
     }
     $widget->get_buffer->delete($start, $end);
     return 1;
   }
   elsif ($event->state & "control-mask" and $event->keyval == $Gtk2::Gdk::Keysyms{Up}) {
-    $widget->get_buffer->set_text($self->lastline);
+    $widget->get_buffer->set_text($self->lastmsg->text) if $self->lastmsg;
     return 1;
   }
   else {
-    $self->spell->recheck_all;
+    Gtk2::Spell->get_from_text_view($self->entry)->recheck_all;
     return 0;
   }
 }
@@ -205,30 +251,19 @@ sub _build_label {
   my ($self, $messages) = @_;
   my $hbox = Gtk2::HBox->new;
   my $label = Gtk2::Label->new($self->name);
-  my $eventbox = Gtk2::EventBox->new();
-  $eventbox->set_size_request('16', '16');
-  $self->icon->set_from_file(
-    $self->app->share_dir . "/images/roomTab.png");
-  $eventbox->add($self->icon);
-  $hbox->pack_start ($eventbox, FALSE, FALSE, 0);
+  $hbox->pack_start ($self->eventbox, FALSE, FALSE, 0);
   $hbox->pack_start ($label, TRUE, TRUE, 0);
-  $eventbox->signal_connect('button-release-event' => sub {
-    $self->active(0);
-    $self->app->remove_channel($self);
-  });
-  $eventbox->signal_connect('enter-notify-event' => sub {
-    $self->icon->set_from_file(
-      $self->app->share_dir . '/images/aquaTabClose.png');
-  });
-  $eventbox->signal_connect('leave-notify-event' => sub {
-    my $icon = $self->unread ? 'roomTabNewMessage' : 'roomTab';
-    $self->icon->set_from_file(
-      $self->app->share_dir . "/images/$icon.png");
-  });
-  $label->show;
-  $self->icon->show;
-  $eventbox->show;
+  $hbox->show_all;
   return $hbox;
+}
+
+sub update_icon {
+  my ($self, $icon) = @_;
+  if ($self->eventbox->child) {
+    $self->eventbox->remove($self->eventbox->child);
+  }
+  $self->eventbox->add($icon);
+  $self->eventbox->show_all;
 }
 
 sub focused {
@@ -253,8 +288,7 @@ sub display_message {
     $self->cleared(0);
     if (! $self->focused) {
       $self->unread(1);
-      $self->icon->set_from_file(
-        $self->app->share_dir . "/images/roomTabNewMessage.png");
+      $self->update_icon($self->icons->{roomTabNewMessage});
     }
   }
   elsif (@{$self->events}) {
