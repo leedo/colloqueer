@@ -2,6 +2,11 @@ use inc::Module::Install;
 
 name  'App-Colloqueer';
 
+abstract 'WebKitGTK+ IRC client';
+author 'Lee Aylward <lee@laylward.com>';
+version '0.01';
+license 'perl';
+
 requires  'File::ShareDir';
 requires  'File::HomeDir';
 requires  'Moose';
@@ -23,6 +28,6 @@ requires  'IPC::Open2';
 install_script 'colloqueer';
 install_script 'irc2html.rb';
 install_share  'share';
+requires_external_bin 'ruby';
 
-install_share;
 WriteAll;

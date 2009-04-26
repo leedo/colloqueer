@@ -1,17 +1,18 @@
 ---
-author: ~
+abstract: 'WebKitGTK+ IRC client'
+author:
+  - 'Lee Aylward <lee@laylward.com>'
 build_requires:
   ExtUtils::MakeMaker: 6.11
 distribution_type: module
 generated_by: 'Module::Install version 0.77'
-license: unknown
+license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: App-Colloqueer
 no_index:
   directory:
-    - share
     - share
     - share
     - inc
@@ -33,3 +34,6 @@ requires:
   XML::LibXML: 0
   XML::LibXSLT: 0
   YAML::Any: 0
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.01
