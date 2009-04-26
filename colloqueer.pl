@@ -11,15 +11,14 @@ use POE::Kernel { loop => 'Glib' };
 use Colloqueer;
 
 $0 = 'colloqueer';
-
+$SIG{CHLD} = "IGNORE";
 my $app = Colloqueer->new(config => 'config.yaml');
 
 POE::Session->create(
   package_states => [
-    main => [ qw/_start irc_001 irc_public irc_msg irc_join irc_part irc_quit/ ],
-  ],
-  heap => { app => $app },
-);
+    main => [ qw/_start irc_001 irc_public irc_msg
+                 irc_join irc_part irc_quit/ ]],
+  heap => { app => $app });
 
 $poe_kernel->run();
 exit 0;

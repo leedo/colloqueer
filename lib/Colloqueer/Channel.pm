@@ -7,7 +7,6 @@ use Gtk2::Gdk::Keysyms;
 use Gtk2::WebKit;
 use Gtk2::Spell;
 use Glib qw/TRUE FALSE/;
-use List::Util qw/first/;
 
 has 'app' => (
   isa => 'Colloqueer',
@@ -164,9 +163,7 @@ sub handle_link_request {
   return if $uri =~ /^member:/;
   my $pid = fork();
   if ($pid == 0) {
-    system($self->app->browser, $uri);
-    wait;
-    exit;
+    exec($self->app->browser, $uri);
   }
   return 'ignore';
 }
