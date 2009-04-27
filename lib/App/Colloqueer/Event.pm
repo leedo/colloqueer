@@ -19,13 +19,6 @@ has 'message' => (
   is  => 'ro'
 );
 
-has 'app' => (
-  isa      => 'App::Colloqueer',
-  is       => 'ro',
-  weak_ref => 1,
-  required => 1
-);
-
 has 'date' => (
   isa     => 'DateTime',
   is      => 'ro',
@@ -37,8 +30,7 @@ has 'id' => (
   is      => 'ro',
   lazy    => 1,
   default => sub {
-    my $self = shift;
-    return $self->app->unique_id;
+    return 'a'.time;
   }
 );
 

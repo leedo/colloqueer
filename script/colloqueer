@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use FindBin;
-use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/../lib";
 use Gtk2 qw/-init/;
 use POE qw/Component::IRC::State/;
 use POE::Kernel { loop => 'Glib' };
@@ -22,8 +22,10 @@ POE::Session->create(
                  irc_join irc_part irc_quit/ ]],
   heap => { app => $app });
 
+open my $log, '>>', '/home/lee/log.irc' or die $!;
 $poe_kernel->run();
 exit 0;
+
 
 sub irc_001 {
   my ($heap, $sender) = @_[HEAP, SENDER];
@@ -39,6 +41,7 @@ sub irc_public {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($where->[0]);
   }
+  print $log "$what\n";
   my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
@@ -59,7 +62,6 @@ sub irc_msg {
     nick    => $nick,
     hostmask => $who,
     text    => $what,
-    channel => $channel,
   );
   $channel->add_message($msg);
 }
@@ -78,7 +80,6 @@ sub irc_join {
     nick  => $nick,
     hostmask => $who,
     message => "joined the chat room.",
-    app => $heap->{app}
   );
   $channel->add_event($event);
 }
@@ -93,7 +94,6 @@ sub irc_part {
     nick  => $nick,
     hostmask => $who,
     message => "left the chat room. ($message)",
-    app => $heap->{app}
   );
   $channel->add_event($event);
 }
@@ -107,7 +107,6 @@ sub irc_quit {
     nick  => $nick,
     hostmask => $who,
     message => "quit. ($message)",
-    app => $heap->{app}
   );
   for (@$channels) {
     $heap->{app}->channel_by_name($_)->add_event($event);

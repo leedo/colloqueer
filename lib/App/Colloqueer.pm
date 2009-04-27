@@ -4,12 +4,11 @@ use App::Colloqueer::Channel;
 use Glib;
 use Gtk2::Gdk::Keysyms;
 use YAML::Any;
-use FindBin;
 use Encode;
 use Template;
 use XML::LibXML;
 use XML::LibXSLT;
-use File::ShareDir qw/dist_dir/;
+use File::ShareDir qw/module_dir dist_dir/;
 
 has 'channel_lookup' => (
   isa => 'HashRef',
@@ -142,9 +141,9 @@ sub BUILD {
   %{ $self->{server} } = %{ $config->{server} };
   $self->browser($config->{browser});
 
-  $self->share_dir( dist_dir('App-Colloqueer'));
-  $self->theme_dir($self->share_dir . '/styles/' . $config->{theme}
-    . '.colloquyStyle/Contents/Resources');
+  $self->share_dir(dist_dir('App-Colloqueer'));
+  $self->theme_dir($self->share_dir . '/styles/'
+    . $config->{theme} . '.colloquyStyle/Contents/Resources');
 
   $self->{tt} = Template->new(
       ENCODING => 'utf8',
@@ -154,13 +153,13 @@ sub BUILD {
     $self->xslt->parse_stylesheet(
       $self->xml->parse_file($self->theme_dir . '/main.xsl'));
 
-  #$self->add_channel($_) for @{$config->{server}{channels}};
-
   $self->window->add($self->notebook);
   $self->window->show_all;
   Glib::Timeout->add(100, sub { $self->display_messages });
-  $self->notebook->signal_connect('switch-page', sub {$self->handle_switch_page(@_)});
-  $self->window->signal_connect('key-press-event', sub {$self->handle_window_keypress(@_)});
+  $self->notebook->signal_connect('switch-page', sub {
+    $self->handle_switch_page(@_)});
+  $self->window->signal_connect('key-press-event', sub {
+    $self->handle_window_keypress(@_)});
 }
 
 sub handle_switch_page {
@@ -184,11 +183,11 @@ sub handle_window_keypress {
       $self->notebook->next_page;
       return 1;
     }
-    if ($event->keyval == $Gtk2::Gdk::Keysyms{p}) {
+    elsif ($event->keyval == $Gtk2::Gdk::Keysyms{p}) {
       $self->notebook->prev_page;
       return 1;
     }
-    if ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
+    elsif ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
       $self->channels->[$self->notebook->get_current_page]->clear();
     }
   }
@@ -197,18 +196,22 @@ sub handle_window_keypress {
 
 sub add_channel {
   my ($self, $name) = @_;
-  my $channel = App::Colloqueer::Channel->new( name => $name, app => $self );
+  my $channel = App::Colloqueer::Channel->new(
+    name => $name,
+    app  => $self
+  );
   push @{ $self->channels }, $channel;
   $self->{channel_lookup}{$name} = $channel;
   $self->irc->yield(names => $name);
+  return $channel;
 }
 
 sub remove_channel {
   my ($self, $channel) = @_;
   $self->irc->yield(part => $channel->name);
-  $self->notebook->remove_page($self->notebook->get_current_page);
   for (0 .. $#{ $self->channels }) {
     if ($self->channels->[$_]->name eq $channel->name) {
+      $self->notebook->remove_page($_);
       splice @{ $self->channels }, $_, 1;
       last;
     }
@@ -219,13 +222,6 @@ sub remove_channel {
 sub channel_by_name {
   my ($self, $name) = @_;
   return $self->{channel_lookup}{$name};
-}
-
-sub show_channel {
-  my ($self, $channel_name) = @_;
-  my $channel = $self->channels->{$channel_name};
-  $self->notebook->append_page($channel->pane, $channel->label);
-  $self->window->show_all;
 }
 
 sub handle_command {
@@ -247,6 +243,7 @@ sub format_messages {
     msgs  => \@msgs,
     self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
+  print STDERR "$message\n";
   my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(

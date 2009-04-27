@@ -21,11 +21,10 @@ requires:
   Encode: 0
   File::HomeDir: 0
   File::ShareDir: 0
-  FindBin: 0
   Gtk2: 0
   Gtk2::Spell: 0
   Gtk2::WebKit: 0
-  IPC::Open2: 0
+  HTML::Entities: 0
   Moose: 0
   POE: 0
   POE::Component::IRC: 0

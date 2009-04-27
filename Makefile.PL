@@ -20,15 +20,11 @@ requires 'DateTime'            => 0;
 requires 'Template'            => 0;
 requires 'XML::LibXML'         => 0;
 requires 'XML::LibXSLT'        => 0;
-requires 'FindBin'             => 0;
 requires 'Encode'              => 0;
 requires 'YAML::Any'           => 0;
-requires 'IPC::Open2'          => 0;
+requires 'HTML::Entities'      => 0,
 
 install_script 'colloqueer';
-install_script 'irc2html.rb';
 install_share  'share';
-
-requires_external_bin 'ruby';
 
 WriteAll;
