@@ -26,9 +26,8 @@ Requirements
 * POE::Component::IRC
 * YAML::Any
 * Template
+* HTML::Entities
 * DateTime
-
-Colloqueer needs ruby until I port irc2html.rb to perl.
 
 Usage
 -----
