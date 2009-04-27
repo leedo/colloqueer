@@ -35,6 +35,7 @@ Usage
 * Ctrl+N **Next tab**
 * Ctrl+P **Previous tab**
 * Ctrl+↑ **Previous line**
+* Ctrl+K **Clear current channel**
 
 ###Commands
 * /clear **Clear current channel**
