@@ -22,7 +22,6 @@ POE::Session->create(
                  irc_join irc_part irc_quit/ ]],
   heap => { app => $app });
 
-open my $log, '>>', '/home/lee/log.irc' or die $!;
 $poe_kernel->run();
 exit 0;
 
@@ -41,7 +40,6 @@ sub irc_public {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($where->[0]);
   }
-  print $log "$what\n";
   my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,

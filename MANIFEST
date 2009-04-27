@@ -1,29 +1,28 @@
-script/colloqueer
-script/irc2html.rb
-lib/App/Colloqueer/IRC/Formatting.pm
-lib/App/Colloqueer/Channel.pm
-lib/App/Colloqueer/Message.pm
-lib/App/Colloqueer/Event.pm
-lib/App/Colloqueer.pm
 Makefile.PL
-share/default.js
-share/styles/Buttesfire.colloquyStyle/Contents/Info.plist
+share/styles/Buttesfire.colloquyStyle/Contents/Resources/Variants/No\ images.css
 share/styles/Buttesfire.colloquyStyle/Contents/Resources/genericTemplate.html
-share/styles/Buttesfire.colloquyStyle/Contents/Resources/Variants/No images.css
+share/styles/Buttesfire.colloquyStyle/Contents/Resources/what\ a\ message\ looks\ like.html
 share/styles/Buttesfire.colloquyStyle/Contents/Resources/main.css
-share/styles/Buttesfire.colloquyStyle/Contents/Resources/what a message looks like.html
+share/styles/Buttesfire.colloquyStyle/Contents/Info.plist
 share/message.xml
-share/default.css
-share/event.xml
 share/base.html
+share/default.js
+share/event.xml
 share/roomTopicBanner.js
-META.yml
+share/default.css
+lib/App/Colloqueer/Channel.pm
+lib/App/Colloqueer/Event.pm
+lib/App/Colloqueer/Message.pm
+lib/App/Colloqueer/IRC/Formatting.pm
+lib/App/Colloqueer.pm
+script/colloqueer
 inc/Module/Install.pm
-inc/Module/Install/Share.pm
 inc/Module/Install/WriteAll.pm
-inc/Module/Install/Win32.pm
-inc/Module/Install/Metadata.pm
-inc/Module/Install/Fetch.pm
-inc/Module/Install/Makefile.pm
-inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/Share.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+META.yml
