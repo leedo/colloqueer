@@ -77,13 +77,13 @@ sub accumulate {
   my ($self, $format_sequence) = @_;
   given ($format_sequence) {
     when (/$BOLD/) {
-      $self->b = !$self->b;
+      $self->b(!$self->b);
     }
     when (/$UNDERLINE/) {
-      $self->u = !$self->u;
+      $self->u(!$self->u);
     }
     when (/$INVERSE/) {
-      $self->i = !$self->i;
+      $self->i(!$self->i);
     }
     when (/$RESET/) {
       $self->reset;
@@ -137,7 +137,7 @@ sub formatted_string_to_html {
     my @formatted_line = parse_formatted_string($_);
     my $line;
     for (@formatted_line) {
-      $line .= '<span style="'.$_->[0]->to_css.'">'.encode_entities($_->[1]).'</span>';
+      $line .= '<span style="'.$_->[0]->to_css.'">'.encode_entities($_->[1], '<>&"').'</span>';
     }
     push @lines, $line;
   }
@@ -146,7 +146,6 @@ sub formatted_string_to_html {
 
 sub parse_formatted_string {
   my $line = shift;
-  print STDERR $line;
   my @segments;
   my $it = natatime 2, ("", split(/$FORMAT_SEQUENCE/, $line));
   my $formatting = App::Colloqueer::IRC::Formatting->new;

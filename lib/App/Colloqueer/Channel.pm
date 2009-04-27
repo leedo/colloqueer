@@ -136,6 +136,30 @@ has 'unread' => (
   default => 0
 );
 
+has 'completion_word' => (
+  isa     => 'Str',
+  is      => 'rw',
+  default => '',
+);
+
+has 'completion_index' => (
+  isa     => 'Int',
+  is      => 'rw',
+  default => 0,
+);
+
+has 'completion_start_mark' => (
+  isa     => 'Int',
+  is      => 'rw',
+  default => 0,
+);
+
+has 'completion_end_mark' => (
+  isa     => 'Int',
+  is      => 'rw',
+  default => 0,
+);
+
 sub BUILD {
   my $self = shift;
 
@@ -216,11 +240,37 @@ sub handle_input {
     $widget->get_buffer->delete($start, $end);
     return 1;
   }
+  elsif ($event->keyval == $Gtk2::Gdk::Keysyms{Tab}) {
+    my $text = $self->completion_word;
+    $text =~ s/^.*\s//;
+    my @nicks = sort $self->app->irc->channel_list($self->name);
+    $self->completion_index(0) if $self->completion_index > $#nicks;
+    for ($self->completion_index .. $#nicks) {
+      my $nick = $nicks[$_];
+      if (substr($nick,0,length $text) eq $text) {
+        my $completion = substr($nick, length $text);
+        my $start = $widget->get_buffer->get_iter_at_offset($self->completion_start_mark);
+        my $end = $widget->get_buffer->get_iter_at_offset($self->completion_end_mark);
+        $widget->get_buffer->delete($start, $end);
+        $widget->get_buffer->insert($start, $completion);
+        $self->completion_end_mark($self->completion_start_mark + length $completion);
+        last;
+      }
+      $self->completion_index($self->completion_index + 1);
+    }
+    return 1;
+  }
   elsif ($event->state & "control-mask" and $event->keyval == $Gtk2::Gdk::Keysyms{Up}) {
     $widget->get_buffer->set_text($self->lastmsg->text) if $self->lastmsg;
     return 1;
   }
   else {
+    my ($start, $end) = $widget->get_buffer->get_bounds;
+    my $string = $widget->get_buffer->get_text($start, $end, TRUE) . chr $event->keyval;
+    my $buffer = $widget->get_buffer;
+    $self->completion_word($string);
+    $self->completion_index(0);
+    $self->completion_start_mark($buffer->get_property('cursor-position') + 1);
     Gtk2::Spell->get_from_text_view($self->entry)->recheck_all;
     return 0;
   }
@@ -301,7 +351,6 @@ sub display_message {
 sub handle_quit {
   my ($self, $event) = @_;
   my @nicks = $self->app->irc->channel_list($self->name);
-  print STDERR $self->name, ": ", @nicks, "\n\n";
   if (grep {$_ eq $event->nick} @nicks) {
     $self->add_event($event);
   }

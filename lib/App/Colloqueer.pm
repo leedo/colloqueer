@@ -141,7 +141,12 @@ sub BUILD {
   %{ $self->{server} } = %{ $config->{server} };
   $self->browser($config->{browser});
 
-  $self->share_dir(dist_dir('App-Colloqueer'));
+  if (-e "$FindBin::Bin/../share/message.xml") {
+    $self->share_dir("$FindBin::Bin/../share");
+  }
+  else {
+    $self->share_dir(dist_dir('App-Colloqueer'));
+  }
   $self->theme_dir($self->share_dir . '/styles/'
     . $config->{theme} . '.colloquyStyle/Contents/Resources');
 
@@ -243,6 +248,9 @@ sub format_messages {
     msgs  => \@msgs,
     self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
+  open my $log, '>>', $ENV{HOME}."/irc.txt";
+  print $log "$message\n\n";
+  close $log;
   my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(
