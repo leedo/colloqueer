@@ -243,7 +243,6 @@ sub format_messages {
     msgs  => \@msgs,
     self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
-  print STDERR "$message\n";
   my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(

@@ -77,7 +77,7 @@ sub irc_join {
   my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
-    message => "joined the chat room.",
+    message => "joined the chat room",
   );
   $channel->add_event($event);
 }
@@ -91,7 +91,7 @@ sub irc_part {
   my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
-    message => "left the chat room. ($message)",
+    message => "left the chat room ($message)",
   );
   $channel->add_event($event);
 }
@@ -104,7 +104,7 @@ sub irc_quit {
   my $event = App::Colloqueer::Event->new(
     nick  => $nick,
     hostmask => $who,
-    message => "quit. ($message)",
+    message => "quit ($message)",
   );
   for (@$channels) {
     $heap->{app}->channel_by_name($_)->add_event($event);
