@@ -29,7 +29,7 @@ exit 0;
 sub irc_001 {
   my ($heap, $sender) = @_[HEAP, SENDER];
   for (@{$heap->{app}->channels}) {
-    $heap->{app}->irc->yield( join => $_->name);
+    $heap->{app}->irc->yield(join => $_->name);
   }
 }
 
@@ -40,9 +40,6 @@ sub irc_public {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($where->[0]);
   }
-  open my $log, '>>', $ENV{HOME}."/irc.txt";
-  print $log "$what\n\n";
-  close $log;
   my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,

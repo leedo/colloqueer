@@ -159,12 +159,16 @@ sub BUILD {
       $self->xml->parse_file($self->theme_dir . '/main.xsl'));
 
   $self->window->add($self->notebook);
-  $self->window->show_all;
-  Glib::Timeout->add(100, sub { $self->display_messages });
+
   $self->notebook->signal_connect('switch-page', sub {
     $self->handle_switch_page(@_)});
   $self->window->signal_connect('key-press-event', sub {
     $self->handle_window_keypress(@_)});
+
+  $self->add_channel($_) for @{$config->{server}{channels}};
+
+  Glib::Timeout->add(100, sub { $self->display_messages });
+  $self->window->show_all;
 }
 
 sub handle_switch_page {
