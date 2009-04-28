@@ -1,11 +1,9 @@
 Small:
 - Try other themes, add a theme selector
 - topic
-- quit messages (quit event doesn't include a channel)
 - /names command
-- tab completion
+- tab completion (started)
 
 Large:
-- Port irc2html.rb to perl
 - Remove use of Template, should be able to do it all with libxml2
 - Multiple servers

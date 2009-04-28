@@ -21,12 +21,14 @@ Requirements
 * Gtk2::Spell
 * XML::LibXML
 * XML::LibXSLT
+* Template
+* HTML::Entities
 * POE
 * POE::Loop::Glib
 * POE::Component::IRC
+* File::HomeDir
+* File::ShareDir
 * YAML::Any
-* Template
-* HTML::Entities
 * DateTime
 
 Usage
