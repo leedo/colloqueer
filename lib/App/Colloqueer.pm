@@ -248,9 +248,6 @@ sub format_messages {
     msgs  => \@msgs,
     self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
-  open my $log, '>>', $ENV{HOME}."/irc.txt";
-  print $log "$message\n\n";
-  close $log;
   my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(
@@ -262,6 +259,7 @@ sub format_messages {
   $message =~ s/<span[^\/>]*\/>//gi; # strip empty spans
   $message =~ s/'/\\'/g;
   $message =~ s/\n//g;
+  print STDERR "$message\n";
   return decode_utf8($message);
 }
 
@@ -270,6 +268,7 @@ sub format_event {
   $self->tt->process('event.xml', {
     event => $event
   }, \(my $xml)) or die $!;
+  print STDERR "$xml\n\n";
   my $doc = $self->xml->parse_string($xml,{encoding => 'utf8'});
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(

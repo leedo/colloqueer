@@ -3,6 +3,7 @@ package App::Colloqueer::IRC::Formatting;
 use List::MoreUtils qw/natatime/;
 use Moose;
 use HTML::Entities;
+  use Data::Dumper;
 
 use feature qw/:5.10/;
 
@@ -22,7 +23,7 @@ my $FORMAT_SEQUENCE   = qr/(
     | $UNDERLINE)
     /x;
 
-my @COLORS = ( qw/fff 000 008 080 ff0 800 808 f80
+my @COLORS = ( qw/fff 000 008 080 f00 800 808 f80
          ff0 0f0 088 0ff 00f f0f 888 ccc/ );
 
 has 'b' => (
@@ -55,13 +56,7 @@ has 'bg' => (
 
 sub dup {
   my $self = shift;
-  return App::Colloqueer::IRC::Formatting->new(
-    b => $self->b,
-    i => $self->i,
-    u => $self->u,
-    fg => $self->fg,
-    bg => $self->bg,
-  )
+  return bless { %$self }, ref $self;
 }
 
 sub reset {
@@ -137,7 +132,7 @@ sub formatted_string_to_html {
     my @formatted_line = parse_formatted_string($_);
     my $line;
     for (@formatted_line) {
-      $line .= '<span style="'.$_->[0]->to_css.'">'.encode_entities($_->[1], '<>&"').'</span>';
+      $line .= '<span style="'.$_->[0]->to_css.'">'.encode_entities($_->[1] || '', '<>&"').'</span>';
     }
     push @lines, $line;
   }
@@ -150,8 +145,8 @@ sub parse_formatted_string {
   my $it = natatime 2, ("", split(/$FORMAT_SEQUENCE/, $line));
   my $formatting = App::Colloqueer::IRC::Formatting->new;
   while (my ($format_sequence, $text) = $it->()) {
-    $formatting = $formatting->accumulate($format_sequence);
-    push @segments, [ $formatting, $text];
+    my $new_formatting = $formatting->accumulate($format_sequence);
+    push @segments, [ $new_formatting, $text];
   }
   return @segments;
 }

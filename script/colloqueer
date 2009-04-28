@@ -40,6 +40,9 @@ sub irc_public {
   if (! $channel) {
     $channel = $heap->{app}->add_channel($where->[0]);
   }
+  open my $log, '>>', $ENV{HOME}."/irc.txt";
+  print $log "$what\n\n";
+  close $log;
   my $msg = App::Colloqueer::Message->new(
     nick    => $nick,
     hostmask => $who,
