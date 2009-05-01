@@ -105,7 +105,11 @@ has 'xml' => (
   isa     => 'XML::LibXML',
   lazy    => 1,
   is      => 'ro',
-  default => sub {XML::LibXML->new()}
+  default => sub {
+    my $parser = XML::LibXML->new();
+    $parser->recover(1);
+    return $parser;
+  }
 );
 
 has 'blank_html' => (
@@ -151,7 +155,7 @@ sub BUILD {
     . $config->{theme} . '.colloquyStyle/Contents/Resources');
 
   $self->{tt} = Template->new(
-      ENCODING => 'utf8',
+      ENCODING => 'UTF8',
       INCLUDE_PATH => [ $self->share_dir, $self->theme_dir ]);
 
   $self->{style_xsl} = 
@@ -252,7 +256,8 @@ sub format_messages {
     msgs  => \@msgs,
     self  => $from eq $self->server->{nick} ? 1 : 0,
   }, \(my $message)) or die $!;
-  my $doc = $self->xml->parse_string($message,{encoding => 'utf8'});
+  my $doc = $self->xml->parse_string($message);
+  $doc->setEncoding("UTF8");
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(
       consecutiveMessage => $consecutive ? 'yes' : 'no',
@@ -272,8 +277,8 @@ sub format_event {
   $self->tt->process('event.xml', {
     event => $event
   }, \(my $xml)) or die $!;
-  print STDERR "$xml\n\n";
-  my $doc = $self->xml->parse_string($xml,{encoding => 'utf8'});
+  my $doc = $self->xml->parse_string($xml);
+  $doc->setEncoding("UTF8");
   my $results = $self->style_xsl->transform($doc,
     XML::LibXSLT::xpath_to_string(
       consecutiveMessage => 'no',
