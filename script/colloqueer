@@ -69,8 +69,10 @@ sub irc_join {
   my ($heap, $who, $to) = @_[HEAP, ARG0, ARG1];
   my $nick = ( split /!/, $who )[0];
   my $channel = $heap->{app}->channel_by_name($to); 
-  if (!$channel and $nick eq $heap->{app}->server->{nick}) {
-    $heap->{app}->add_channel($to);
+  if ($nick eq $heap->{app}->server->{nick}) {
+    if (!$channel) {
+      $heap->{app}->add_channel($to);
+    }
     return;
   } 
   return unless $channel;
