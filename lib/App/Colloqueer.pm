@@ -203,6 +203,11 @@ sub handle_window_keypress {
     elsif ($event->keyval == $Gtk2::Gdk::Keysyms{k}) {
       $self->channels->[$self->notebook->get_current_page]->clear();
     }
+    elsif ($event->keyval == $Gtk2::Gdk::Keysyms{w}) {
+      my $current_page = $self->notebook->get_current_page;
+      my $channel = $self->channels->[$current_page];
+      $self->remove_channel($channel);
+    }
   }
   return 0;
 }
@@ -268,7 +273,6 @@ sub format_messages {
   $message =~ s/<span[^\/>]*\/>//gi; # strip empty spans
   $message =~ s/'/\\'/g;
   $message =~ s/\n//g;
-  print STDERR "$message\n";
   return decode_utf8($message);
 }
 
