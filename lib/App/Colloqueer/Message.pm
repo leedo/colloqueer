@@ -17,7 +17,7 @@ has 'html' => (isa => 'Str', is => 'ro', lazy => 1, default => sub {
   my $string = App::Colloqueer::IRC::Formatting->formatted_string_to_html($self->text);
   $string =~ s/\\/\\\\/g;
   $string =~ s/\s{2}/ &#160;/g;
-  $string =~ s/(https?\:\/\/.+)([\b<])/<a href="$1">$1<\/a>$2/gi;
+  $string =~ s/(https?\:\/\/.+?)([\b\s<])/<a href="$1">$1<\/a>$2/gi;
   return $string;
 });
 
