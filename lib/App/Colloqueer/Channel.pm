@@ -222,6 +222,15 @@ sub handle_input {
     if ($string =~ /^\/clear/) {
       $self->clear;
     }
+    if ($string =~ /^\/topic\s?(.*)/) {
+      if ($1) {
+        $self->app->irc->yield(topic => $self->name => $1);
+      }
+      else {
+        my $topc = $self->app->irc->channel_topic($self->name);
+
+      }
+    }
     elsif ($string =~ /^\/(.+)/) {
       $self->app->handle_command($1);
     }
